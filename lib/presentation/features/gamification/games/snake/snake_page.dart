@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../../providers/gamification_provider.dart';
 import '../../../../../../core/theme/app_theme.dart';
 
 class SnakePage extends StatefulWidget {
@@ -107,6 +109,9 @@ class _SnakePageState extends State<SnakePage> {
       context: context,
       barrierDismissible: false,
       builder: (context) {
+        // Save score
+        context.read<GamificationProvider>().updateHighScore('Snake', score);
+
         return AlertDialog(
           backgroundColor: const Color(0xFF161B28),
           title: const Text("Game Over", style: TextStyle(color: Colors.white)),

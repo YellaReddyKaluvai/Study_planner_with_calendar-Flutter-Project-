@@ -1,37 +1,149 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'color_palette.dart';
+import 'typography.dart';
 
 class AppTheme {
-  // Academic Futurism Color Palette
-  static const Color primary = Color(0xFF00F0FF); // Cyan Neon
-  static const Color secondary = Color(0xFF7B61FF); // Academic Iris
-  static const Color background = Color(0xFF0A0E17); // Deep Space
-  static const Color surface = Color(0xFF161B28); // Soft Dark
-  static const Color error = Color(0xFFFF2E51); // Alert Red
-  static const Color success = Color(0xFF00FF94); // Success Green
-  static const Color warning = Color(0xFFFFC043); // Warning Amber
+  static const Color primary = AppPalette.primary;
+  static const Color secondary = AppPalette.secondary;
+  static const Color background = AppPalette.backgroundDark;
 
-  // Glassmorphism Colors
-  static Color glassWhite = Colors.white.withOpacity(0.05);
-  static Color glassBorder = Colors.white.withOpacity(0.1);
+  static const Color surface = AppPalette.surfaceDark;
+  static const Color success = AppPalette.success;
+  static const Color error = AppPalette.error;
+  static const Color warning = AppPalette.warning;
+  static const Color glassWhite = AppPalette.glassWhite;
+  static final Color glassBorder = Colors.white.withOpacity(0.2);
+
+  static const LinearGradient primaryGradient = LinearGradient(
+    colors: [AppPalette.primary, AppPalette.primaryDark],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static ThemeData get lightTheme {
+    return ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.light,
+      primaryColor: AppPalette.primary,
+      scaffoldBackgroundColor: AppPalette.backgroundLight,
+      colorScheme: const ColorScheme.light(
+        primary: AppPalette.primary,
+        secondary: AppPalette.secondary,
+        surface: AppPalette.surfaceLight,
+        error: AppPalette.error,
+        onPrimary: Colors.white,
+        onSecondary: Colors.white,
+        onSurface: AppPalette.textPrimaryLight,
+        onError: Colors.white,
+      ),
+      textTheme: AppTypography.lightTextTheme,
+      appBarTheme: AppBarTheme(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+        titleTextStyle: AppTypography.lightTextTheme.titleLarge,
+        iconTheme: const IconThemeData(color: AppPalette.textPrimaryLight),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade200),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade200),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppPalette.primary, width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppPalette.error),
+        ),
+        labelStyle: TextStyle(color: AppPalette.textSecondaryLight),
+        hintStyle:
+            TextStyle(color: AppPalette.textSecondaryLight.withOpacity(0.7)),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppPalette.primary,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          textStyle: AppTypography.lightTextTheme.labelLarge?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
 
   static ThemeData get darkTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
-      scaffoldBackgroundColor: background,
-      primaryColor: primary,
+      primaryColor: AppPalette.primary,
+      scaffoldBackgroundColor: AppPalette.backgroundDark,
       colorScheme: const ColorScheme.dark(
-        primary: primary,
-        secondary: secondary,
-        surface: surface,
-        error: error,
+        primary: AppPalette.primary,
+        secondary: AppPalette.secondary,
+        surface: AppPalette.surfaceDark,
+        error: AppPalette.error,
+        onPrimary: Colors.white,
+        onSecondary: Colors.white,
+        onSurface: AppPalette.textPrimaryDark,
+        onError: Colors.white,
       ),
-      textTheme: GoogleFonts.interTextTheme(
-        ThemeData.dark().textTheme,
-      ).apply(
-        bodyColor: Colors.white,
-        displayColor: Colors.white,
+      textTheme: AppTypography.darkTextTheme,
+      appBarTheme: AppBarTheme(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+        titleTextStyle: AppTypography.darkTextTheme.titleLarge,
+        iconTheme: const IconThemeData(color: AppPalette.textPrimaryDark),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: AppPalette.surfaceDark,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade800),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade800),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppPalette.primary, width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppPalette.error),
+        ),
+        labelStyle: TextStyle(color: AppPalette.textSecondaryDark),
+        hintStyle:
+            TextStyle(color: AppPalette.textSecondaryDark.withOpacity(0.7)),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppPalette.primary,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          textStyle: AppTypography.darkTextTheme.labelLarge?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ),
     );
   }

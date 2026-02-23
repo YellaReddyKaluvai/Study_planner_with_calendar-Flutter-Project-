@@ -34,6 +34,23 @@ class TaskPage extends StatelessWidget {
               Expanded(
                 child: Consumer<TaskProvider>(
                   builder: (context, taskProvider, child) {
+                    if (taskProvider.tasks.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.assignment_turned_in_outlined,
+                                size: 80, color: Colors.white24),
+                            SizedBox(height: 16),
+                            Text(
+                              "No tasks yet!",
+                              style: TextStyle(
+                                  color: Colors.white54, fontSize: 18),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
                     return ListView.builder(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       itemCount: taskProvider.tasks.length,
@@ -59,7 +76,7 @@ class TaskPage extends StatelessWidget {
                           },
                           child: GlassContainer(
                             margin: const EdgeInsets.only(bottom: 12),
-                            child: ListTile(
+                            child: ExpansionTile(
                               leading: Container(
                                 width: 4,
                                 height: 40,
@@ -75,12 +92,74 @@ class TaskPage extends StatelessWidget {
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              subtitle: Text(
-                                task.description,
-                                style: const TextStyle(color: Colors.white54),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    task.description,
+                                    style:
+                                        const TextStyle(color: Colors.white54),
+                                  ),
+                                  if (task.hasAiPlan) ...[
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        Icon(Icons.auto_awesome,
+                                            size: 14,
+                                            color: AppTheme.secondary),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          "AI Plan Generated",
+                                          style: TextStyle(
+                                            color: AppTheme.secondary,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ],
                               ),
-                              trailing: const Icon(Icons.chevron_right,
-                                  color: Colors.white54),
+                              children: [
+                                if (task.hasAiPlan)
+                                  Padding(
+                                    padding: const EdgeInsets.all(16.0),
+                                    child: Container(
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color:
+                                            AppTheme.secondary.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                            color: AppTheme.secondary
+                                                .withOpacity(0.3)),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            "Preparation Plan",
+                                            style: TextStyle(
+                                              color: AppTheme.secondary,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            task.preparationPlan!,
+                                            style: const TextStyle(
+                                                color: Colors.white70),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                              collapsedIconColor: Colors.white54,
+                              iconColor: AppTheme.primary,
                             ),
                           ),
                         );

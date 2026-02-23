@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "470707781599",
+    "project_id": "study-planner-with-calendar",
+    "storage_bucket": "study-planner-with-calendar.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:470707781599:android:dbdd914e3de26762f00e6a",
+        "android_client_info": {
+          "package_name": "com.example.study_planner_with_calendar"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "470707781599-djtekid7qlu22d75s8nc3lj7crmqpc4j.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBuwDApZ5tUYmEspUyRZddFIoFTvNCEK_E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "470707781599-djtekid7qlu22d75s8nc3lj7crmqpc4j.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

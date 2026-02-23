@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../providers/gamification_provider.dart';
 import '../../shared/glass_container.dart';
+import '../../../../core/theme/app_theme.dart';
 import 'games/tic_tac_toe/tic_tac_toe_page.dart';
 import 'games/2048/game_2048_page.dart';
 import 'games/sudoku/sudoku_page.dart';
@@ -87,16 +90,69 @@ class GameCenterPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Padding(
-                padding: EdgeInsets.all(24.0),
-                child: Text(
-                  "Game Center",
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
+              Consumer<GamificationProvider>(
+                builder: (context, gameProvider, child) {
+                  return Container(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "Game Center",
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: AppTheme.primary,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                "Level ${gameProvider.currentLevel}",
+                                style: const TextStyle(
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              "${gameProvider.currentXP} XP",
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: LinearProgressIndicator(
+                            value: gameProvider.levelProgress,
+                            backgroundColor: Colors.white10,
+                            color: AppTheme.secondary,
+                            minHeight: 6,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          "${(gameProvider.levelProgress * 100).toInt()}% to Level ${gameProvider.currentLevel + 1}",
+                          style: const TextStyle(
+                              color: Colors.white38, fontSize: 10),
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
               Expanded(
                 child: GridView.builder(

@@ -9,7 +9,11 @@ import '../../features/tasks/task_page.dart';
 import '../../features/tasks/widgets/task_creation_sheet.dart';
 import '../../features/gamification/game_center_page.dart';
 import '../../features/chatbot/chatbot_page.dart';
-import '../../features/profile/profile_page.dart';
+import '../../features/focus/focus_timer_page.dart';
+import '../../features/analytics/analytics_dashboard.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../features/profile/presentation/profile_page.dart';
 
 // Move the Dashboard content here
 class DashboardPage extends StatelessWidget {
@@ -29,76 +33,166 @@ class DashboardPage extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    "Welcome back,",
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.white70,
-                    ),
+                  Row(
+                    children: [
+                      Text(
+                        "Welcome back",
+                        style: GoogleFonts.outfit(
+                          fontSize: 16,
+                          color: Colors.white70,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Icon(Icons.waving_hand,
+                          color: Color(0xFFFFC043), size: 18),
+                    ],
                   ),
                   const SizedBox(height: 8),
-                  const Text(
+                  Text(
                     "Ready to focus?",
-                    style: TextStyle(
-                      fontSize: 28,
+                    style: GoogleFonts.outfit(
+                      fontSize: 32,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
+                      height: 1.1,
                     ),
                   ),
                 ],
               ),
-              GlassContainer(
-                padding: const EdgeInsets.all(12),
-                borderRadius: BorderRadius.circular(16),
-                child: IconButton(
-                  icon:
-                      const Icon(Icons.auto_awesome, color: Color(0xFF00F0FF)),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const ChatbotPage()),
-                    );
-                  },
-                ),
+              Row(
+                children: [
+                  GlassContainer(
+                    padding: const EdgeInsets.all(2),
+                    borderRadius: BorderRadius.circular(20),
+                    gradient: AppTheme.primaryGradient,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: AppTheme.surface,
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      child: IconButton(
+                        icon: const Icon(Icons.timer, color: Color(0xFF00F0FF)),
+                        tooltip: 'Focus Timer',
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const FocusTimerPage(),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  GlassContainer(
+                    padding: const EdgeInsets.all(2),
+                    borderRadius: BorderRadius.circular(20),
+                    gradient: AppTheme.primaryGradient,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: AppTheme.surface,
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      child: IconButton(
+                        icon: const Icon(Icons.auto_awesome,
+                            color: Color(0xFF00F0FF)),
+                        tooltip: 'AI Chatbot',
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const ChatbotPage()),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ).animate().fade(duration: 600.ms).slideX(begin: -0.2, end: 0),
           const SizedBox(height: 32),
 
-          GlassContainer(
-            height: 200,
-            width: double.infinity,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      "Productivity Pulse",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    Icon(Icons.bolt, color: Theme.of(context).primaryColor),
-                  ],
+          Text("Quick Stats",
+              style: GoogleFonts.outfit(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white)),
+          const SizedBox(height: 16),
+
+          Row(
+            children: [
+              Expanded(
+                child: _StatCard(
+                  title: "Tasks Done",
+                  value: "12",
+                  icon: Icons.check_circle_outline,
+                  color: AppTheme.success,
                 ),
-                const Spacer(),
-                const Center(
-                  child: Text(
-                    "Charts coming soon...",
-                    style: TextStyle(color: Colors.white38),
-                  ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _StatCard(
+                  title: "Focus Time",
+                  value: "4h 20m",
+                  icon: Icons.timer,
+                  color: AppTheme.primary,
                 ),
-                const Spacer(),
-              ],
-            ),
+              ),
+            ],
           )
               .animate()
               .fade(delay: 200.ms, duration: 600.ms)
               .slideY(begin: 0.2, end: 0),
+
+          const SizedBox(height: 32),
+
+          // Real Analytics Dashboard
+          const AnalyticsDashboard()
+              .animate()
+              .fade(delay: 400.ms, duration: 600.ms)
+              .slideY(begin: 0.2, end: 0),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatCard extends StatelessWidget {
+  final String title;
+  final String value;
+  final IconData icon;
+  final Color color;
+
+  const _StatCard({
+    required this.title,
+    required this.value,
+    required this.icon,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassContainer(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Icon(icon, color: color, size: 20),
+              Icon(Icons.arrow_forward_ios, color: Colors.white10, size: 12),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(value,
+              style: GoogleFonts.outfit(
+                  fontSize: 24, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 4),
+          Text(title,
+              style: GoogleFonts.outfit(fontSize: 12, color: Colors.white54)),
         ],
       ),
     );

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../../providers/gamification_provider.dart';
 import '../../../../../../core/theme/app_theme.dart';
 
 class TowerStackPage extends StatefulWidget {
@@ -122,20 +124,25 @@ class _TowerStackPageState extends State<TowerStackPage>
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => AlertDialog(
-        title: const Text("Game Over"),
-        content: Text("You stacked $_score blocks!"),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _resetGame();
-              _startGame();
-            },
-            child: const Text("Play Again"),
-          ),
-        ],
-      ),
+      builder: (_) {
+        context
+            .read<GamificationProvider>()
+            .updateHighScore('Tower Stack', _score);
+        return AlertDialog(
+          title: const Text("Game Over"),
+          content: Text("You stacked $_score blocks!"),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _resetGame();
+                _startGame();
+              },
+              child: const Text("Play Again"),
+            ),
+          ],
+        );
+      },
     );
   }
 

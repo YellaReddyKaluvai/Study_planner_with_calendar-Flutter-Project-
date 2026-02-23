@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../../providers/gamification_provider.dart';
 
 class TetrisPage extends StatefulWidget {
   const TetrisPage({super.key});
@@ -298,13 +300,18 @@ class _TetrisPageState extends State<TetrisPage> {
 
             // Controls
             if (isGameOver)
-              const Padding(
+              Padding(
                 padding: EdgeInsets.all(20.0),
-                child: Text("GAME OVER",
-                    style: TextStyle(
-                        color: Colors.red,
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold)),
+                child: Builder(builder: (context) {
+                  context
+                      .read<GamificationProvider>()
+                      .updateHighScore('Tetris', score);
+                  return Text("GAME OVER",
+                      style: TextStyle(
+                          color: Colors.red,
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold));
+                }),
               )
             else
               Padding(

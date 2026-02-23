@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../shared/animated_background.dart';
-import '../home/home_page.dart';
+import '../auth/login_page.dart';
 
 class OnboardingPage extends StatelessWidget {
   const OnboardingPage({super.key});
@@ -102,7 +102,7 @@ class OnboardingPage extends StatelessWidget {
                       Navigator.pushReplacement(
                         context,
                         PageRouteBuilder(
-                          pageBuilder: (c, a1, a2) => const HomePage(),
+                          pageBuilder: (c, a1, a2) => const LoginPage(),
                           transitionsBuilder: (c, a1, a2, child) =>
                               FadeTransition(opacity: a1, child: child),
                           transitionDuration: const Duration(milliseconds: 800),

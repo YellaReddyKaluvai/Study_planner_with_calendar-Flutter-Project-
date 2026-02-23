@@ -1,5 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../../providers/gamification_provider.dart';
 
 class Game2048Page extends StatefulWidget {
   const Game2048Page({super.key});
@@ -213,9 +215,14 @@ class _Game2048PageState extends State<Game2048Page> {
                   margin: const EdgeInsets.only(bottom: 20),
                   padding: const EdgeInsets.all(10),
                   color: Colors.redAccent,
-                  child: const Text("Game Over!",
-                      style: TextStyle(
-                          color: Colors.white, fontWeight: FontWeight.bold)),
+                  child: Builder(builder: (context) {
+                    context
+                        .read<GamificationProvider>()
+                        .updateHighScore('2048', score);
+                    return const Text("Game Over!",
+                        style: TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.bold));
+                  }),
                 ),
               Center(
                 child: Container(

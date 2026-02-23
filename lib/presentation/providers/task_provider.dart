@@ -1,39 +1,43 @@
 import 'package:flutter/material.dart';
 import '../../domain/entities/task.dart';
-import '../../core/theme/app_theme.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../core/services/gemini_service.dart';
+import '../../core/data/database_helper.dart';
+import 'gamification_provider.dart';
+
 class TaskProvider extends ChangeNotifier {
-  final List<Task> _tasks = [
-    Task(
-      id: '1',
-      title: 'Complete Math Assignment',
-      description: 'Chapter 5 exercises',
-      startTime: DateTime.now().add(const Duration(hours: 1)),
-      endTime: DateTime.now().add(const Duration(hours: 2)),
-      color: AppTheme.primary,
-      type: 'study',
-    ),
-    Task(
-      id: '2',
-      title: 'Physics Project Research',
-      description: 'Find sources for paper',
-      startTime: DateTime.now().add(const Duration(hours: 3)),
-      endTime: DateTime.now().add(const Duration(hours: 5)),
-      color: AppTheme.secondary,
-      type: 'assignment',
-    ),
-  ];
+  List<Task> _tasks = [];
+  bool _isLoading = false;
 
   List<Task> get tasks => _tasks;
+  bool get isLoading => _isLoading;
 
-  void addTask(
-      {required String title,
-      required String description,
-      required DateTime startTime,
-      required DateTime endTime,
-      required Color color,
-      int priority = 2}) {
+  TaskProvider() {
+    loadTasks();
+  }
+
+  Future<void> loadTasks() async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      _tasks = await DatabaseHelper.instance.readAllTasks();
+    } catch (e) {
+      debugPrint("Error loading tasks: $e");
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> addTask({
+    required String title,
+    required String description,
+    required DateTime startTime,
+    required DateTime endTime,
+    required Color color,
+    int priority = 2,
+  }) async {
     final newTask = Task(
       id: const Uuid().v4(),
       title: title,
@@ -43,12 +47,61 @@ class TaskProvider extends ChangeNotifier {
       color: color,
       priority: priority,
     );
+
     _tasks.add(newTask);
     notifyListeners();
+
+    await DatabaseHelper.instance.createTask(newTask);
+
+    // Trigger AI Generation
+    _generatePlanForTask(newTask);
   }
 
-  void deleteTask(String id) {
+  Future<void> _generatePlanForTask(Task task) async {
+    try {
+      final aiService = GeminiService();
+      final plan = await aiService.generatePreparationPlan(task);
+
+      final index = _tasks.indexWhere((t) => t.id == task.id);
+      if (index != -1) {
+        final updatedTask = _tasks[index].copyWith(preparationPlan: plan);
+        _tasks[index] = updatedTask;
+        notifyListeners();
+
+        await DatabaseHelper.instance.updateTask(updatedTask);
+      }
+    } catch (e) {
+      debugPrint("Failed to generate AI plan: $e");
+    }
+  }
+
+  GamificationProvider? _gamificationProvider;
+
+  void updateGamification(GamificationProvider provider) {
+    _gamificationProvider = provider;
+  }
+
+  Future<void> toggleTaskStatus(String id) async {
+    final index = _tasks.indexWhere((t) => t.id == id);
+    if (index != -1) {
+      final task = _tasks[index];
+      final isNowCompleted = !task.isCompleted;
+      final updatedTask = task.copyWith(isCompleted: isNowCompleted);
+
+      _tasks[index] = updatedTask;
+      notifyListeners();
+
+      await DatabaseHelper.instance.updateTask(updatedTask);
+
+      if (isNowCompleted) {
+        _gamificationProvider?.addXP(50);
+      }
+    }
+  }
+
+  Future<void> deleteTask(String id) async {
     _tasks.removeWhere((task) => task.id == id);
     notifyListeners();
+    await DatabaseHelper.instance.deleteTask(id);
   }
 }

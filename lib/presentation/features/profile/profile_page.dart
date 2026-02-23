@@ -224,7 +224,7 @@ class _ProfilePageState extends State<ProfilePage> {
     return SwitchListTile(
       value: value,
       onChanged: onChanged,
-      activeColor: AppTheme.primary,
+      activeThumbColor: AppTheme.primary,
       secondary: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
