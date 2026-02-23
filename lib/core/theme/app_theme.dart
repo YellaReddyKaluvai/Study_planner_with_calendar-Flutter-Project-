@@ -13,6 +13,11 @@ class AppTheme {
   static const Color warning = AppPalette.warning;
   static const Color glassWhite = AppPalette.glassWhite;
   static final Color glassBorder = Colors.white.withOpacity(0.2);
+  
+  // Additional colors for compatibility
+  static const Color bgCard = AppPalette.surfaceDark;
+  static const Color bgDark = AppPalette.backgroundDark;
+  static const Color neonCyan = Color(0xFF00F0FF);
 
   static const LinearGradient primaryGradient = LinearGradient(
     colors: [AppPalette.primary, AppPalette.primaryDark],

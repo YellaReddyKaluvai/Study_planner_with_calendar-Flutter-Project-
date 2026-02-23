@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import '../../providers/navigation_provider.dart';
+import '../../providers/task_provider.dart';
 import '../../shared/glass_container.dart';
 import '../../shared/animated_background.dart';
 import '../../features/calendar/calendar_page.dart';
@@ -21,140 +22,152 @@ class DashboardPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 48), // Space for status bar
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subtextColor = isDark ? Colors.white70 : Colors.black54;
+    
+    return Consumer<TaskProvider>(
+      builder: (context, taskProvider, _) {
+        // Calculate real stats from tasks
+        final completedTasks = taskProvider.tasks.where((t) => t.isCompleted).length;
+        final totalTasks = taskProvider.tasks.length;
+        
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              const SizedBox(height: 48), // Space for status bar
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            "Welcome back",
+                            style: GoogleFonts.outfit(
+                              fontSize: 16,
+                              color: subtextColor,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          const Icon(Icons.waving_hand,
+                              color: Color(0xFFFFC043), size: 18),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        "Ready to focus?",
+                        style: GoogleFonts.outfit(
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          color: textColor,
+                          height: 1.1,
+                        ),
+                      ),
+                    ],
+                  ),
                   Row(
                     children: [
-                      Text(
-                        "Welcome back",
-                        style: GoogleFonts.outfit(
-                          fontSize: 16,
-                          color: Colors.white70,
+                      GlassContainer(
+                        padding: const EdgeInsets.all(2),
+                        borderRadius: BorderRadius.circular(20),
+                        gradient: AppTheme.primaryGradient,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: isDark ? AppTheme.surface : Colors.white,
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                          child: IconButton(
+                            icon: Icon(Icons.timer, color: AppTheme.primary),
+                            tooltip: 'Focus Timer',
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const FocusTimerPage(),
+                                ),
+                              );
+                            },
+                          ),
                         ),
                       ),
                       const SizedBox(width: 8),
-                      const Icon(Icons.waving_hand,
-                          color: Color(0xFFFFC043), size: 18),
+                      GlassContainer(
+                        padding: const EdgeInsets.all(2),
+                        borderRadius: BorderRadius.circular(20),
+                        gradient: AppTheme.primaryGradient,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: isDark ? AppTheme.surface : Colors.white,
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                          child: IconButton(
+                            icon: Icon(Icons.auto_awesome,
+                                color: AppTheme.primary),
+                            tooltip: 'AI Chatbot',
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => const ChatbotPage()),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    "Ready to focus?",
-                    style: GoogleFonts.outfit(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      height: 1.1,
-                    ),
-                  ),
                 ],
-              ),
+              ).animate().fade(duration: 600.ms).slideX(begin: -0.2, end: 0),
+              const SizedBox(height: 32),
+
+              Text("Quick Stats",
+                  style: GoogleFonts.outfit(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: textColor)),
+              const SizedBox(height: 16),
+
               Row(
                 children: [
-                  GlassContainer(
-                    padding: const EdgeInsets.all(2),
-                    borderRadius: BorderRadius.circular(20),
-                    gradient: AppTheme.primaryGradient,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: AppTheme.surface,
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                      child: IconButton(
-                        icon: const Icon(Icons.timer, color: Color(0xFF00F0FF)),
-                        tooltip: 'Focus Timer',
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const FocusTimerPage(),
-                            ),
-                          );
-                        },
-                      ),
+                  Expanded(
+                    child: _StatCard(
+                      title: "Tasks Done",
+                      value: "$completedTasks",
+                      icon: Icons.check_circle_outline,
+                      color: AppTheme.success,
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  GlassContainer(
-                    padding: const EdgeInsets.all(2),
-                    borderRadius: BorderRadius.circular(20),
-                    gradient: AppTheme.primaryGradient,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: AppTheme.surface,
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                      child: IconButton(
-                        icon: const Icon(Icons.auto_awesome,
-                            color: Color(0xFF00F0FF)),
-                        tooltip: 'AI Chatbot',
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const ChatbotPage()),
-                          );
-                        },
-                      ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _StatCard(
+                      title: "Total Tasks",
+                      value: "$totalTasks",
+                      icon: Icons.assignment,
+                      color: AppTheme.primary,
                     ),
                   ),
                 ],
-              ),
+              )
+                  .animate()
+                  .fade(delay: 200.ms, duration: 600.ms)
+                  .slideY(begin: 0.2, end: 0),
+
+              const SizedBox(height: 32),
+
+              // Real Analytics Dashboard
+              const AnalyticsDashboard()
+                  .animate()
+                  .fade(delay: 400.ms, duration: 600.ms)
+                  .slideY(begin: 0.2, end: 0),
             ],
-          ).animate().fade(duration: 600.ms).slideX(begin: -0.2, end: 0),
-          const SizedBox(height: 32),
-
-          Text("Quick Stats",
-              style: GoogleFonts.outfit(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white)),
-          const SizedBox(height: 16),
-
-          Row(
-            children: [
-              Expanded(
-                child: _StatCard(
-                  title: "Tasks Done",
-                  value: "12",
-                  icon: Icons.check_circle_outline,
-                  color: AppTheme.success,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _StatCard(
-                  title: "Focus Time",
-                  value: "4h 20m",
-                  icon: Icons.timer,
-                  color: AppTheme.primary,
-                ),
-              ),
-            ],
-          )
-              .animate()
-              .fade(delay: 200.ms, duration: 600.ms)
-              .slideY(begin: 0.2, end: 0),
-
-          const SizedBox(height: 32),
-
-          // Real Analytics Dashboard
-          const AnalyticsDashboard()
-              .animate()
-              .fade(delay: 400.ms, duration: 600.ms)
-              .slideY(begin: 0.2, end: 0),
-        ],
-      ),
+          ),
+        );
+      },
     );
   }
 }
@@ -174,6 +187,10 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subtextColor = isDark ? Colors.white54 : Colors.black54;
+    
     return GlassContainer(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -183,16 +200,16 @@ class _StatCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Icon(icon, color: color, size: 20),
-              Icon(Icons.arrow_forward_ios, color: Colors.white10, size: 12),
+              Icon(Icons.arrow_forward_ios, color: isDark ? Colors.white10 : Colors.black12, size: 12),
             ],
           ),
           const SizedBox(height: 12),
           Text(value,
               style: GoogleFonts.outfit(
-                  fontSize: 24, fontWeight: FontWeight.bold)),
+                  fontSize: 24, fontWeight: FontWeight.bold, color: textColor)),
           const SizedBox(height: 4),
           Text(title,
-              style: GoogleFonts.outfit(fontSize: 12, color: Colors.white54)),
+              style: GoogleFonts.outfit(fontSize: 12, color: subtextColor)),
         ],
       ),
     );
@@ -205,6 +222,7 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final navProvider = Provider.of<NavigationProvider>(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final List<Widget> pages = [
       const DashboardPage(),
@@ -245,7 +263,7 @@ class HomePage extends StatelessWidget {
               },
               backgroundColor: Theme.of(context).primaryColor,
               mini: true,
-              child: const Icon(Icons.add, color: Colors.black),
+              child: const Icon(Icons.add, color: Colors.white),
             ),
             _NavBarIcon(icon: Icons.games, index: 3, provider: navProvider),
             _NavBarIcon(icon: Icons.person, index: 4, provider: navProvider),
@@ -267,10 +285,13 @@ class _NavBarIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isSelected = provider.currentIndex == index;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final inactiveColor = isDark ? Colors.white54 : Colors.black45;
+    
     return IconButton(
       icon: Icon(
         icon,
-        color: isSelected ? Theme.of(context).primaryColor : Colors.white54,
+        color: isSelected ? Theme.of(context).primaryColor : inactiveColor,
         size: 28,
       ),
       onPressed: () => provider.setIndex(index),

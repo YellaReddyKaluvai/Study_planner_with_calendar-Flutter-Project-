@@ -10,24 +10,24 @@ class TaskPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    
     return Scaffold(
       body: Container(
-        // Background moved here if not covered by HomePage stack, but HomePage stack covers it.
-        // Actually HomePage stack covers this, so we just need content.
-        // But let's be safe and make it transparent or just content.
-        color: const Color(0xff0A0E17).withOpacity(0.0),
+        color: Colors.transparent,
         child: SafeArea(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Padding(
-                padding: EdgeInsets.all(24.0),
+              Padding(
+                padding: const EdgeInsets.all(24.0),
                 child: Text(
                   "My Tasks",
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: textColor,
                   ),
                 ),
               ),
@@ -40,12 +40,18 @@ class TaskPage extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(Icons.assignment_turned_in_outlined,
-                                size: 80, color: Colors.white24),
-                            SizedBox(height: 16),
+                                size: 80, color: isDark ? Colors.white24 : Colors.black26),
+                            const SizedBox(height: 16),
                             Text(
                               "No tasks yet!",
                               style: TextStyle(
-                                  color: Colors.white54, fontSize: 18),
+                                  color: isDark ? Colors.white54 : Colors.black54, fontSize: 18),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              "Tap + to create your first task",
+                              style: TextStyle(
+                                  color: isDark ? Colors.white38 : Colors.black38, fontSize: 14),
                             ),
                           ],
                         ),
@@ -59,20 +65,82 @@ class TaskPage extends StatelessWidget {
                         return Dismissible(
                           key: Key(task.id),
                           background: Container(
-                            color: AppTheme.success,
+                            margin: const EdgeInsets.only(bottom: 12),
+                            decoration: BoxDecoration(
+                              color: AppTheme.success.withOpacity(0.8),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
                             alignment: Alignment.centerLeft,
-                            padding: const EdgeInsets.only(left: 20),
-                            child: const Icon(Icons.check, color: Colors.white),
+                            padding: const EdgeInsets.only(left: 24),
+                            child: const Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.check_circle, color: Colors.white, size: 32),
+                                SizedBox(height: 4),
+                                Text('Complete', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                              ],
+                            ),
                           ),
                           secondaryBackground: Container(
-                            color: AppTheme.error,
+                            margin: const EdgeInsets.only(bottom: 12),
+                            decoration: BoxDecoration(
+                              color: AppTheme.error.withOpacity(0.8),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
                             alignment: Alignment.centerRight,
-                            padding: const EdgeInsets.only(right: 20),
-                            child:
-                                const Icon(Icons.delete, color: Colors.white),
+                            padding: const EdgeInsets.only(right: 24),
+                            child: const Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.delete_forever, color: Colors.white, size: 32),
+                                SizedBox(height: 4),
+                                Text('Delete', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                              ],
+                            ),
                           ),
-                          onDismissed: (direction) {
-                            taskProvider.deleteTask(task.id);
+                          confirmDismiss: (direction) async {
+                            if (direction == DismissDirection.startToEnd) {
+                              taskProvider.toggleTaskCompletion(task.id);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(task.isCompleted ? 'Task marked as incomplete' : 'Task completed!'),
+                                  duration: const Duration(seconds: 2),
+                                  backgroundColor: AppTheme.success,
+                                ),
+                              );
+                              return false;
+                            } else {
+                              final result = await showDialog<bool>(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: const Text('Delete Task'),
+                                  content: Text('Are you sure you want to delete "${task.title}"?'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context, false),
+                                      child: const Text('Cancel'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context, true),
+                                      child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                                    ),
+                                  ],
+                                ),
+                              );
+                              if (result == true) {
+                                taskProvider.deleteTask(task.id);
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Task deleted'),
+                                      duration: Duration(seconds: 2),
+                                      backgroundColor: AppTheme.error,
+                                    ),
+                                  );
+                                }
+                              }
+                              return false;
+                            }
                           },
                           child: GlassContainer(
                             margin: const EdgeInsets.only(bottom: 12),
@@ -87,9 +155,10 @@ class TaskPage extends StatelessWidget {
                               ),
                               title: Text(
                                 task.title,
-                                style: const TextStyle(
-                                  color: Colors.white,
+                                style: TextStyle(
+                                  color: textColor,
                                   fontWeight: FontWeight.bold,
+                                  decoration: task.isCompleted ? TextDecoration.lineThrough : null,
                                 ),
                               ),
                               subtitle: Column(
@@ -97,8 +166,7 @@ class TaskPage extends StatelessWidget {
                                 children: [
                                   Text(
                                     task.description,
-                                    style:
-                                        const TextStyle(color: Colors.white54),
+                                    style: TextStyle(color: isDark ? Colors.white54 : Colors.black54),
                                   ),
                                   if (task.hasAiPlan) ...[
                                     const SizedBox(height: 8),
@@ -150,15 +218,15 @@ class TaskPage extends StatelessWidget {
                                           const SizedBox(height: 8),
                                           Text(
                                             task.preparationPlan!,
-                                            style: const TextStyle(
-                                                color: Colors.white70),
+                                            style: TextStyle(
+                                                color: isDark ? Colors.white70 : Colors.black87),
                                           ),
                                         ],
                                       ),
                                     ),
                                   ),
                               ],
-                              collapsedIconColor: Colors.white54,
+                              collapsedIconColor: isDark ? Colors.white54 : Colors.black54,
                               iconColor: AppTheme.primary,
                             ),
                           ),
@@ -182,7 +250,7 @@ class TaskPage extends StatelessWidget {
           );
         },
         backgroundColor: AppTheme.primary,
-        child: const Icon(Icons.add, color: Colors.black),
+        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }

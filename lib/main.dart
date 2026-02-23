@@ -6,6 +6,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_provider.dart'; // Import ThemeProvider
 import 'core/router/app_router.dart';
+import 'core/services/auth_service.dart';
 import 'presentation/providers/chat_provider.dart';
 import 'presentation/providers/navigation_provider.dart';
 import 'presentation/providers/task_provider.dart';
@@ -40,6 +41,7 @@ class StudyPlannerApp extends ConsumerWidget {
     // Keep existing Providers for legacy code compatibility
     return provider.MultiProvider(
       providers: [
+        provider.Provider(create: (_) => AuthService()),
         provider.ChangeNotifierProvider(create: (_) => NavigationProvider()),
         provider.ChangeNotifierProvider(create: (_) => GamificationProvider()),
         provider.ChangeNotifierProvider(create: (_) => ChatProvider()),

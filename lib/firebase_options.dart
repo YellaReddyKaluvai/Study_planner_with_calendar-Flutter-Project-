@@ -21,24 +21,20 @@ class DefaultFirebaseOptions {
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
-        throw UnsupportedError(
-          'Android options are not configured. Run `flutterfire configure` to add settings.',
-        );
+        return android;
       case TargetPlatform.iOS:
-        throw UnsupportedError(
-          'iOS options are not configured. Run `flutterfire configure` to add settings.',
-        );
+        return ios;
       case TargetPlatform.macOS:
         throw UnsupportedError(
-          'macOS options are not configured. Run `flutterfire configure` to add settings.',
+          'macOS options are not configured.',
         );
       case TargetPlatform.windows:
         throw UnsupportedError(
-          'Windows options are not configured. Run `flutterfire configure` to add settings.',
+          'Windows options are not configured.',
         );
       case TargetPlatform.linux:
         throw UnsupportedError(
-          'Linux options are not configured. Run `flutterfire configure` to add settings.',
+          'Linux options are not configured.',
         );
       default:
         throw UnsupportedError(
@@ -46,6 +42,23 @@ class DefaultFirebaseOptions {
         );
     }
   }
+
+  static const FirebaseOptions android = FirebaseOptions(
+    apiKey: 'AIzaSyBuwDApZ5tUYmEspUyRZddFIoFTvNCEK_E',
+    appId: '1:470707781599:android:dbdd914e3de26762f00e6a',
+    messagingSenderId: '470707781599',
+    projectId: 'study-planner-with-calendar',
+    storageBucket: 'study-planner-with-calendar.firebasestorage.app',
+  );
+
+  static const FirebaseOptions ios = FirebaseOptions(
+    apiKey: 'AIzaSyBuwDApZ5tUYmEspUyRZddFIoFTvNCEK_E',
+    appId: '1:470707781599:ios:dbdd914e3de26762f00e6a',
+    messagingSenderId: '470707781599',
+    projectId: 'study-planner-with-calendar',
+    storageBucket: 'study-planner-with-calendar.firebasestorage.app',
+    iosBundleId: 'com.example.studyPlannerWithCalendar',
+  );
 
   static const FirebaseOptions web = FirebaseOptions(
     apiKey: 'AIzaSyBuwDApZ5tUYmEspUyRZddFIoFTvNCEK_E',

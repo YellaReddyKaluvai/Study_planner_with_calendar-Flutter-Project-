@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../shared/animated_background.dart';
-import '../auth/login_page.dart';
+import '../../../features/auth/presentation/login_page.dart';
 
 class OnboardingPage extends StatelessWidget {
   const OnboardingPage({super.key});

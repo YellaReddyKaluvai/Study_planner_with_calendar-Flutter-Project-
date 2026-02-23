@@ -11,6 +11,9 @@ class AnalyticsDashboard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    
     return Consumer<AnalyticsProvider>(
       builder: (context, analyticsProvider, _) {
         if (analyticsProvider.isLoading) {
@@ -18,9 +21,9 @@ class AnalyticsDashboard extends StatelessWidget {
             height: 220,
             width: double.infinity,
             padding: const EdgeInsets.all(20),
-            child: const Center(
+            child: Center(
               child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF00F0FF)),
+                valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primary),
               ),
             ),
           );
@@ -29,7 +32,7 @@ class AnalyticsDashboard extends StatelessWidget {
         return Column(
           children: [
             // Weekly Progress Chart
-            _buildWeeklyChart(analyticsProvider),
+            _buildWeeklyChart(analyticsProvider, isDark, textColor),
             const SizedBox(height: 24),
 
             // Stats Grid
@@ -37,14 +40,14 @@ class AnalyticsDashboard extends StatelessWidget {
             const SizedBox(height: 24),
 
             // Subject Performance
-            _buildSubjectPerformance(analyticsProvider),
+            _buildSubjectPerformance(analyticsProvider, isDark, textColor),
           ],
         );
       },
     );
   }
 
-  Widget _buildWeeklyChart(AnalyticsProvider provider) {
+  Widget _buildWeeklyChart(AnalyticsProvider provider, bool isDark, Color textColor) {
     return GlassContainer(
       height: 280,
       width: double.infinity,
@@ -60,6 +63,7 @@ class AnalyticsDashboard extends StatelessWidget {
                 style: GoogleFonts.outfit(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
+                  color: textColor,
                 ),
               ),
               Icon(Icons.bolt, color: AppTheme.primary),
@@ -68,15 +72,15 @@ class AnalyticsDashboard extends StatelessWidget {
           const SizedBox(height: 16),
           Expanded(
             child: provider.weeklyData.isEmpty
-                ? _buildEmptyState()
-                : _buildBarChart(provider.weeklyData),
+                ? _buildEmptyState(isDark)
+                : _buildBarChart(provider.weeklyData, isDark),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildBarChart(Map<String, int> data) {
+  Widget _buildBarChart(Map<String, int> data, bool isDark) {
     final maxValue =
         (data.values.isEmpty ? 0 : data.values.reduce((a, b) => a > b ? a : b))
             .toDouble();
@@ -92,7 +96,7 @@ class AnalyticsDashboard extends StatelessWidget {
           barRods: [
             BarChartRodData(
               toY: minutes.toDouble(),
-              color: Color(0xFF00F0FF)
+              color: AppTheme.primary
                   .withOpacity(0.7 + (0.3 * (minutes / normalizedMaxValue))),
               width: 16,
               borderRadius: const BorderRadius.only(
@@ -115,6 +119,7 @@ class AnalyticsDashboard extends StatelessWidget {
               showTitles: true,
               getTitlesWidget: (value, meta) {
                 final keys = data.keys.toList();
+                if (value.toInt() >= keys.length) return const SizedBox();
                 final key = keys[value.toInt()];
                 return SideTitleWidget(
                   axisSide: meta.axisSide,
@@ -122,7 +127,7 @@ class AnalyticsDashboard extends StatelessWidget {
                     key.split('/')[1],
                     style: GoogleFonts.outfit(
                       fontSize: 10,
-                      color: Colors.white54,
+                      color: isDark ? Colors.white54 : Colors.black54,
                     ),
                   ),
                 );
@@ -182,7 +187,7 @@ class AnalyticsDashboard extends StatelessWidget {
     );
   }
 
-  Widget _buildSubjectPerformance(AnalyticsProvider provider) {
+  Widget _buildSubjectPerformance(AnalyticsProvider provider, bool isDark, Color textColor) {
     if (provider.subjectData.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -203,13 +208,14 @@ class AnalyticsDashboard extends StatelessWidget {
                 style: GoogleFonts.outfit(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
+                  color: textColor,
                 ),
               ),
               Text(
                 'This Week',
                 style: GoogleFonts.outfit(
                   fontSize: 12,
-                  color: Colors.white70,
+                  color: isDark ? Colors.white70 : Colors.black54,
                 ),
               ),
             ],
@@ -228,14 +234,17 @@ class AnalyticsDashboard extends StatelessWidget {
                     children: [
                       Text(
                         entry.key,
-                        style: GoogleFonts.outfit(fontSize: 12),
+                        style: GoogleFonts.outfit(
+                          fontSize: 12,
+                          color: textColor,
+                        ),
                       ),
                       Text(
                         '${entry.value}m',
                         style: GoogleFonts.outfit(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: const Color(0xFF00F0FF),
+                          color: AppTheme.primary,
                         ),
                       ),
                     ],
@@ -246,11 +255,11 @@ class AnalyticsDashboard extends StatelessWidget {
                     child: LinearProgressIndicator(
                       value: percentage / 100,
                       minHeight: 6,
-                      backgroundColor: Colors.white10,
+                      backgroundColor: isDark ? Colors.white10 : Colors.black12,
                       valueColor: AlwaysStoppedAnimation<Color>(
                         Color.lerp(
-                          const Color(0xFF00F0FF),
-                          const Color(0xFFFFC043),
+                          AppTheme.primary,
+                          AppTheme.secondary,
                           (100 - percentage) / 100,
                         )!,
                       ),
@@ -265,17 +274,20 @@ class AnalyticsDashboard extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(bool isDark) {
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.bar_chart_outlined, size: 48, color: Colors.white10),
+          Icon(Icons.bar_chart_outlined, size: 48, color: isDark ? Colors.white10 : Colors.black12),
           const SizedBox(height: 8),
           Text(
             'No data yet\nStart a study session to see analytics',
             textAlign: TextAlign.center,
-            style: GoogleFonts.outfit(color: Colors.white38, fontSize: 12),
+            style: GoogleFonts.outfit(
+              color: isDark ? Colors.white38 : Colors.black38,
+              fontSize: 12,
+            ),
           ),
         ],
       ),
@@ -298,6 +310,10 @@ class _StatTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subtextColor = isDark ? Colors.white54 : Colors.black54;
+    
     return GlassContainer(
       padding: const EdgeInsets.all(12),
       child: Column(
@@ -310,6 +326,7 @@ class _StatTile extends StatelessWidget {
             style: GoogleFonts.outfit(
               fontSize: 18,
               fontWeight: FontWeight.bold,
+              color: textColor,
             ),
           ),
           const SizedBox(height: 2),
@@ -317,7 +334,7 @@ class _StatTile extends StatelessWidget {
             title,
             style: GoogleFonts.outfit(
               fontSize: 10,
-              color: Colors.white54,
+              color: subtextColor,
             ),
           ),
         ],

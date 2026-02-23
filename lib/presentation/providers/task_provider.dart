@@ -98,6 +98,11 @@ class TaskProvider extends ChangeNotifier {
       }
     }
   }
+  
+  // Alias for compatibility
+  Future<void> toggleTaskCompletion(String id) async {
+    await toggleTaskStatus(id);
+  }
 
   Future<void> deleteTask(String id) async {
     _tasks.removeWhere((task) => task.id == id);

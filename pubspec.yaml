@@ -67,6 +67,7 @@ dependencies:
   go_router: ^14.0.0
   image_picker: ^1.2.1
   firebase_storage: ^12.4.10
+  cached_network_image: ^3.3.1
 
 
 
