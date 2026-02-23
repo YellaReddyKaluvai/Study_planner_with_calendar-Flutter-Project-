@@ -4,16 +4,23 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../features/auth/presentation/auth_providers.dart';
 import '../../features/auth/presentation/login_page.dart';
+import '../../features/auth/domain/user_entity.dart';
 import '../../presentation/features/home/home_page.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final authRepository = ref.watch(authRepositoryProvider);
+  final authNotifier = ValueNotifier<UserEntity?>(ref.watch(currentUserProvider));
+  
+  // Update the notifier whenever the currentUserProvider changes
+  ref.listen<UserEntity?>(currentUserProvider, (_, next) {
+    authNotifier.value = next;
+  });
 
   return GoRouter(
     initialLocation: '/',
-    refreshListenable: GoRouterRefreshStream(authRepository.authStateChanges),
+    refreshListenable: authNotifier,
     redirect: (context, state) {
-      final isLoggedIn = ref.read(currentUserProvider) != null;
+      final user = ref.read(currentUserProvider);
+      final isLoggedIn = user != null && user.isNotEmpty;
       final isLoggingIn = state.uri.toString() == '/login';
 
       if (!isLoggedIn) {

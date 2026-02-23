@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import '../../providers/navigation_provider.dart';
 import '../../providers/task_provider.dart';
+import '../../providers/analytics_provider.dart';
 import '../../shared/glass_container.dart';
 import '../../shared/animated_background.dart';
 import '../../features/calendar/calendar_page.dart';
@@ -26,18 +27,24 @@ class DashboardPage extends StatelessWidget {
     final textColor = isDark ? Colors.white : Colors.black87;
     final subtextColor = isDark ? Colors.white70 : Colors.black54;
     
-    return Consumer<TaskProvider>(
-      builder: (context, taskProvider, _) {
-        // Calculate real stats from tasks
-        final completedTasks = taskProvider.tasks.where((t) => t.isCompleted).length;
+    return Consumer2<TaskProvider, AnalyticsProvider>(
+      builder: (context, taskProvider, analyticsProvider, _) {
+        final completedTasks =
+            taskProvider.tasks.where((t) => t.isCompleted).length;
         final totalTasks = taskProvider.tasks.length;
-        
+
+        // Format today's focus minutes from analytics
+        final focusMins = analyticsProvider.totalStudyTime;
+        final focusLabel = focusMins >= 60
+            ? '${focusMins ~/ 60}h ${focusMins % 60}m'
+            : '${focusMins}m';
+
         return SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 48), // Space for status bar
+              const SizedBox(height: 48),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -90,7 +97,10 @@ class DashboardPage extends StatelessWidget {
                                 MaterialPageRoute(
                                   builder: (context) => const FocusTimerPage(),
                                 ),
-                              );
+                              ).then((_) {
+                                // Refresh analytics when returning from focus timer
+                                analyticsProvider.refreshData();
+                              });
                             },
                           ),
                         ),
@@ -132,6 +142,7 @@ class DashboardPage extends StatelessWidget {
                       color: textColor)),
               const SizedBox(height: 16),
 
+              // Row 1: Tasks
               Row(
                 children: [
                   Expanded(
@@ -152,14 +163,40 @@ class DashboardPage extends StatelessWidget {
                     ),
                   ),
                 ],
-              )
-                  .animate()
-                  .fade(delay: 200.ms, duration: 600.ms)
-                  .slideY(begin: 0.2, end: 0),
+              ).animate().fade(delay: 200.ms, duration: 600.ms).slideY(begin: 0.2, end: 0),
+
+              const SizedBox(height: 12),
+
+              // Row 2: Focus time stat
+              Row(
+                children: [
+                  Expanded(
+                    child: _StatCard(
+                      title: "Focus Time",
+                      value: focusMins == 0 ? '—' : focusLabel,
+                      icon: Icons.timer_outlined,
+                      color: const Color(0xFF00F0FF),
+                      subtitle: 'total logged',
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _StatCard(
+                      title: "Avg Session",
+                      value: analyticsProvider.averageSessionTime == 0
+                          ? '—'
+                          : '${analyticsProvider.averageSessionTime.toInt()}m',
+                      icon: Icons.trending_up,
+                      color: const Color(0xFFFFA500),
+                      subtitle: 'per session',
+                    ),
+                  ),
+                ],
+              ).animate().fade(delay: 300.ms, duration: 600.ms).slideY(begin: 0.2, end: 0),
 
               const SizedBox(height: 32),
 
-              // Real Analytics Dashboard
+              // Analytics chart + subject
               const AnalyticsDashboard()
                   .animate()
                   .fade(delay: 400.ms, duration: 600.ms)
@@ -177,12 +214,14 @@ class _StatCard extends StatelessWidget {
   final String value;
   final IconData icon;
   final Color color;
+  final String? subtitle;
 
   const _StatCard({
     required this.title,
     required this.value,
     required this.icon,
     required this.color,
+    this.subtitle,
   });
 
   @override
@@ -210,6 +249,14 @@ class _StatCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text(title,
               style: GoogleFonts.outfit(fontSize: 12, color: subtextColor)),
+          if (subtitle != null) ...[
+            const SizedBox(height: 2),
+            Text(subtitle!,
+                style: GoogleFonts.outfit(
+                    fontSize: 10,
+                    color: color.withOpacity(0.7),
+                    fontWeight: FontWeight.w500)),
+          ],
         ],
       ),
     );

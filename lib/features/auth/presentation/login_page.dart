@@ -29,8 +29,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final theme = Theme.of(context);
 
     // Listen to auth state changes to navigate
-    ref.listen(authStateProvider, (previous, next) {
-      if (next.value != null) {
+    ref.listen(currentUserProvider, (previous, next) {
+      if (next != null && next.isNotEmpty) {
         // Navigate to Home if logged in
         context.go('/');
       }

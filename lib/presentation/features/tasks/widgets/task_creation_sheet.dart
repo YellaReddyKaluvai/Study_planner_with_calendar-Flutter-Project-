@@ -4,22 +4,28 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../providers/task_provider.dart';
 import '../../../shared/glass_container.dart';
+import '../../../../domain/entities/task.dart';
 
 class TaskCreationSheet extends StatefulWidget {
-  const TaskCreationSheet({super.key});
+  /// Pass an existing task to open the sheet in edit mode.
+  final Task? task;
+
+  const TaskCreationSheet({super.key, this.task});
 
   @override
   State<TaskCreationSheet> createState() => _TaskCreationSheetState();
 }
 
 class _TaskCreationSheetState extends State<TaskCreationSheet> {
-  final _titleController = TextEditingController();
-  final _notesController = TextEditingController();
-  DateTime _startTime = DateTime.now();
-  DateTime _endTime = DateTime.now().add(const Duration(hours: 1));
-  Color _selectedColor = AppTheme.primary;
-  int _selectedPriority = 2;
-  String _selectedCategory = 'study';
+  late final TextEditingController _titleController;
+  late final TextEditingController _notesController;
+  late DateTime _startTime;
+  late DateTime _endTime;
+  late Color _selectedColor;
+  late int _selectedPriority;
+  late String _selectedCategory;
+
+  bool get _isEditing => widget.task != null;
 
   final List<Color> _colors = [
     AppTheme.primary,
@@ -28,6 +34,26 @@ class _TaskCreationSheetState extends State<TaskCreationSheet> {
     AppTheme.warning,
     const Color(0xFFFF2E51), // Error/High Priority
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    final t = widget.task;
+    _titleController = TextEditingController(text: t?.title ?? '');
+    _notesController = TextEditingController(text: t?.description ?? '');
+    _startTime = t?.startTime ?? DateTime.now();
+    _endTime = t?.endTime ?? DateTime.now().add(const Duration(hours: 1));
+    _selectedColor = t?.color ?? AppTheme.primary;
+    _selectedPriority = t?.priority ?? 2;
+    _selectedCategory = t?.type ?? 'study';
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _notesController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,7 +80,7 @@ class _TaskCreationSheetState extends State<TaskCreationSheet> {
             ),
             const SizedBox(height: 24),
             Text(
-              "New Task",
+              _isEditing ? "Edit Task" : "New Task",
               style: GoogleFonts.inter(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -66,7 +92,7 @@ class _TaskCreationSheetState extends State<TaskCreationSheet> {
             // Title Input
             TextField(
               controller: _titleController,
-              autofocus: true,
+              autofocus: !_isEditing,
               style: const TextStyle(color: Colors.white, fontSize: 18),
               decoration: const InputDecoration(
                 hintText: "What do you need to do?",
@@ -96,7 +122,6 @@ class _TaskCreationSheetState extends State<TaskCreationSheet> {
             // Options Row
             Row(
               children: [
-                // Date Picker Chip
                 // Date & Time Pickers
                 Expanded(
                   child: Row(
@@ -153,7 +178,7 @@ class _TaskCreationSheetState extends State<TaskCreationSheet> {
                     value: _selectedColor,
                     dropdownColor: AppTheme.surface,
                     icon:
-                        const Icon(Icons.circle, size: 12), // Hide default icon
+                        const Icon(Icons.circle, size: 12),
                     items: _colors.map((color) {
                       return DropdownMenuItem(
                         value: color,
@@ -168,13 +193,6 @@ class _TaskCreationSheetState extends State<TaskCreationSheet> {
                     onChanged: (color) {
                       if (color != null) setState(() => _selectedColor = color);
                     },
-                    /*selectedItemBuilder: (context) {
-                      return _colors.map((c) => Container(
-                          width: 20, 
-                          height: 20, 
-                          decoration: BoxDecoration(color: c, shape: BoxShape.circle),
-                        )).toList();
-                    },*/
                   ),
                 ),
               ],
@@ -263,23 +281,11 @@ class _TaskCreationSheetState extends State<TaskCreationSheet> {
 
             const SizedBox(height: 24),
 
-            // Create Button
+            // Create / Update Button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
-                  if (_titleController.text.isNotEmpty) {
-                    Provider.of<TaskProvider>(context, listen: false).addTask(
-                      title: _titleController.text,
-                      description: _notesController.text,
-                      startTime: _startTime,
-                      endTime: _endTime,
-                      color: _selectedColor,
-                      priority: _selectedPriority,
-                    );
-                    Navigator.pop(context);
-                  }
-                },
+                onPressed: _submit,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.primary,
                   foregroundColor: Colors.black,
@@ -288,8 +294,10 @@ class _TaskCreationSheetState extends State<TaskCreationSheet> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text("Create Task",
-                    style: TextStyle(fontWeight: FontWeight.bold)),
+                child: Text(
+                  _isEditing ? "Update Task" : "Create Task",
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
               ),
             ),
           ],
@@ -298,13 +306,42 @@ class _TaskCreationSheetState extends State<TaskCreationSheet> {
     );
   }
 
+  void _submit() {
+    if (_titleController.text.isEmpty) return;
+
+    final provider = Provider.of<TaskProvider>(context, listen: false);
+
+    if (_isEditing) {
+      final updated = widget.task!.copyWith(
+        title: _titleController.text,
+        description: _notesController.text,
+        startTime: _startTime,
+        endTime: _endTime,
+        color: _selectedColor,
+        priority: _selectedPriority,
+        type: _selectedCategory,
+      );
+      provider.updateTask(updated);
+    } else {
+      provider.addTask(
+        title: _titleController.text,
+        description: _notesController.text,
+        startTime: _startTime,
+        endTime: _endTime,
+        color: _selectedColor,
+        priority: _selectedPriority,
+        type: _selectedCategory,
+      );
+    }
+    Navigator.pop(context);
+  }
+
   Future<void> _pickDateTime(bool isStart) async {
     final initialDate = isStart ? _startTime : _endTime;
     final date = await showDatePicker(
       context: context,
       initialDate: initialDate,
-      firstDate: DateTime.now().subtract(const Duration(
-          days: 365)), // Allow past dates for editing/flexibility
+      firstDate: DateTime.now().subtract(const Duration(days: 365)),
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
 
@@ -327,12 +364,10 @@ class _TaskCreationSheetState extends State<TaskCreationSheet> {
 
           if (isStart) {
             _startTime = newDateTime;
-            // Auto-adjust end time if it's before start time
             if (_endTime.isBefore(_startTime)) {
               _endTime = _startTime.add(const Duration(hours: 1));
             }
           } else {
-            // Validate End Time
             if (newDateTime.isAfter(_startTime)) {
               _endTime = newDateTime;
             } else {

@@ -15,11 +15,9 @@ class SnakePage extends StatefulWidget {
 enum Direction { up, down, left, right }
 
 class _SnakePageState extends State<SnakePage> {
-  // Grid settings
   final int squaresPerRow = 20;
   final int squaresPerCol = 30;
 
-  // Game state
   List<int> snake = [45, 44, 43];
   int food = 0;
   Direction direction = Direction.right;
@@ -40,48 +38,33 @@ class _SnakePageState extends State<SnakePage> {
       score = 0;
       direction = Direction.right;
     });
-    const duration = Duration(milliseconds: 200);
-    timer = Timer.periodic(duration, (Timer timer) {
+    timer = Timer.periodic(const Duration(milliseconds: 200), (_) {
       moveSnake();
     });
   }
 
   void generateFood() {
     food = Random().nextInt(squaresPerRow * squaresPerCol);
-    if (snake.contains(food)) {
-      generateFood();
-    }
+    if (snake.contains(food)) generateFood();
   }
 
   void moveSnake() {
     setState(() {
       switch (direction) {
         case Direction.up:
-          if (snake.first < squaresPerRow) {
-            gameOver();
-            return;
-          }
+          if (snake.first < squaresPerRow) { gameOver(); return; }
           snake.insert(0, snake.first - squaresPerRow);
           break;
         case Direction.down:
-          if (snake.first >= (squaresPerRow * squaresPerCol) - squaresPerRow) {
-            gameOver();
-            return;
-          }
+          if (snake.first >= (squaresPerRow * squaresPerCol) - squaresPerRow) { gameOver(); return; }
           snake.insert(0, snake.first + squaresPerRow);
           break;
         case Direction.left:
-          if (snake.first % squaresPerRow == 0) {
-            gameOver();
-            return;
-          }
+          if (snake.first % squaresPerRow == 0) { gameOver(); return; }
           snake.insert(0, snake.first - 1);
           break;
         case Direction.right:
-          if ((snake.first + 1) % squaresPerRow == 0) {
-            gameOver();
-            return;
-          }
+          if ((snake.first + 1) % squaresPerRow == 0) { gameOver(); return; }
           snake.insert(0, snake.first + 1);
           break;
       }
@@ -93,7 +76,6 @@ class _SnakePageState extends State<SnakePage> {
         snake.removeLast();
       }
 
-      // Check collision with self
       if (snake.sublist(1).contains(snake.first)) {
         gameOver();
       }
@@ -102,40 +84,42 @@ class _SnakePageState extends State<SnakePage> {
 
   void gameOver() {
     timer?.cancel();
-    setState(() {
-      isPlaying = false;
-    });
+    setState(() => isPlaying = false);
+
+    // Award XP: 20 base + 1 XP per 10 score points
+    final xpEarned = 20 + (score ~/ 10);
+    context.read<GamificationProvider>().addXP(xpEarned);
+    context.read<GamificationProvider>().updateHighScore('Snake', score);
+
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) {
-        // Save score
-        context.read<GamificationProvider>().updateHighScore('Snake', score);
-
-        return AlertDialog(
-          backgroundColor: const Color(0xFF161B28),
-          title: const Text("Game Over", style: TextStyle(color: Colors.white)),
-          content: Text("Score: $score",
-              style: const TextStyle(color: Colors.white70)),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                startGame();
-              },
-              child: const Text("Play Again",
-                  style: TextStyle(color: AppTheme.primary)),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                Navigator.pop(context);
-              },
-              child: const Text("Exit", style: TextStyle(color: Colors.red)),
-            ),
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF161B28),
+        title: const Text('Game Over', style: TextStyle(color: Colors.white)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Score: $score', style: const TextStyle(color: Colors.white70, fontSize: 18)),
+            const SizedBox(height: 8),
+            Text('+$xpEarned XP earned!',
+                style: const TextStyle(
+                    color: Color(0xFF00F0FF),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16)),
           ],
-        );
-      },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () { Navigator.pop(ctx); startGame(); },
+            child: const Text('Play Again', style: TextStyle(color: AppTheme.primary)),
+          ),
+          TextButton(
+            onPressed: () { Navigator.pop(ctx); Navigator.pop(context); },
+            child: const Text('Exit', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
     );
   }
 
@@ -150,16 +134,15 @@ class _SnakePageState extends State<SnakePage> {
     return Scaffold(
       backgroundColor: const Color(0xFF0A0E17),
       appBar: AppBar(
-        title: const Text("Snake"),
+        title: const Text('Snake'),
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Text("Score: $score",
-                style:
-                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          )
+            child: Text('Score: $score',
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          ),
         ],
       ),
       body: Column(
@@ -169,16 +152,14 @@ class _SnakePageState extends State<SnakePage> {
               onVerticalDragUpdate: (details) {
                 if (direction != Direction.up && details.delta.dy > 0) {
                   direction = Direction.down;
-                } else if (direction != Direction.down &&
-                    details.delta.dy < 0) {
+                } else if (direction != Direction.down && details.delta.dy < 0) {
                   direction = Direction.up;
                 }
               },
               onHorizontalDragUpdate: (details) {
                 if (direction != Direction.left && details.delta.dx > 0) {
                   direction = Direction.right;
-                } else if (direction != Direction.right &&
-                    details.delta.dx < 0) {
+                } else if (direction != Direction.right && details.delta.dx < 0) {
                   direction = Direction.left;
                 }
               },
@@ -190,7 +171,6 @@ class _SnakePageState extends State<SnakePage> {
                 ),
                 itemBuilder: (context, index) {
                   if (snake.contains(index)) {
-                    // Head is different color
                     return Container(
                       margin: const EdgeInsets.all(1),
                       decoration: BoxDecoration(
@@ -204,7 +184,7 @@ class _SnakePageState extends State<SnakePage> {
                   if (index == food) {
                     return Container(
                       margin: const EdgeInsets.all(1),
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         color: Colors.redAccent,
                         shape: BoxShape.circle,
                       ),
@@ -232,7 +212,7 @@ class _SnakePageState extends State<SnakePage> {
                     padding: const EdgeInsets.all(16),
                   ),
                   onPressed: startGame,
-                  child: const Text("Start Game",
+                  child: const Text('Start Game',
                       style: TextStyle(color: Colors.black, fontSize: 18)),
                 ),
               ),

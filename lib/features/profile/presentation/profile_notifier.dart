@@ -16,7 +16,9 @@ final userRepositoryProvider = Provider<UserRepository>((ref) {
 
 final userProfileStreamProvider = StreamProvider.autoDispose<UserEntity>((ref) {
   final currentUser = ref.watch(currentUserProvider);
-  if (currentUser == null) return Stream.value(UserEntity.empty());
+  if (currentUser == null || currentUser.uid.isEmpty) {
+    return Stream.value(UserEntity.empty());
+  }
 
   final userRepository = ref.watch(userRepositoryProvider);
   return userRepository.getUserStream(currentUser.uid);

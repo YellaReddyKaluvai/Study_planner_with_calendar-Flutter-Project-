@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import '../domain/auth_repository.dart';
 import '../domain/user_entity.dart';
 
@@ -111,28 +112,39 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<UserEntity> signInWithGoogle() async {
     try {
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) {
-        // User canceled the sign-in flow
-        return UserEntity.empty();
+      if (kIsWeb) {
+        final GoogleAuthProvider googleProvider = GoogleAuthProvider();
+        final UserCredential userCredential =
+            await _firebaseAuth.signInWithPopup(googleProvider);
+
+        if (userCredential.user != null) {
+          await _syncUserToFirestore(userCredential.user!);
+        }
+
+        return _mapFirebaseUser(userCredential.user);
+      } else {
+        final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+        if (googleUser == null) {
+          return UserEntity.empty();
+        }
+
+        final GoogleSignInAuthentication googleAuth =
+            await googleUser.authentication;
+
+        final OAuthCredential credential = GoogleAuthProvider.credential(
+          accessToken: googleAuth.accessToken,
+          idToken: googleAuth.idToken,
+        );
+
+        final UserCredential userCredential =
+            await _firebaseAuth.signInWithCredential(credential);
+
+        if (userCredential.user != null) {
+          await _syncUserToFirestore(userCredential.user!);
+        }
+
+        return _mapFirebaseUser(userCredential.user);
       }
-
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
-
-      final OAuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-
-      final UserCredential userCredential =
-          await _firebaseAuth.signInWithCredential(credential);
-
-      if (userCredential.user != null) {
-        await _syncUserToFirestore(userCredential.user!);
-      }
-
-      return _mapFirebaseUser(userCredential.user);
     } catch (e) {
       print('Google Sign In Error: $e');
       rethrow;
@@ -141,7 +153,15 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<void> signOut() async {
-    await _googleSignIn.signOut();
+    try {
+      await _googleSignIn.signOut();
+      if (kIsWeb) {
+        // Disconnect forces the account picker on next login for web
+        await _googleSignIn.disconnect();
+      }
+    } catch (e) {
+      print('Google Sign Out Error: $e');
+    }
     await _firebaseAuth.signOut();
   }
 

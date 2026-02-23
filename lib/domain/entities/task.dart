@@ -63,6 +63,8 @@ class Task {
       'isCompleted': isCompleted ? 1 : 0,
       'color': color.value,
       'type': type,
+      'priority': priority,
+      'hasAiPlan': hasAiPlan ? 1 : 0,
       'preparationPlan': preparationPlan,
     };
   }
@@ -77,6 +79,7 @@ class Task {
       isCompleted: map['isCompleted'] == 1,
       color: Color(map['color']),
       type: map['type'],
+      priority: map['priority'] ?? 2,
       preparationPlan: map['preparationPlan'],
     );
   }

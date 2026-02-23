@@ -14,91 +14,179 @@ import 'games/tetris/tetris_page.dart';
 import 'games/wordle/wordle_page.dart';
 import 'games/tower_stack/tower_stack_page.dart';
 
-class GameCenterPage extends StatelessWidget {
+/// XP awarded per game (flat + can be multiplied by score)
+class _GameInfo {
+  final String name;
+  final IconData icon;
+  final Color color;
+  final int baseXP; // XP per play
+  final Widget Function(BuildContext) builder;
+
+  const _GameInfo({
+    required this.name,
+    required this.icon,
+    required this.color,
+    required this.baseXP,
+    required this.builder,
+  });
+}
+
+class GameCenterPage extends StatefulWidget {
   const GameCenterPage({super.key});
 
-  final List<Map<String, dynamic>> _games = const [
-    {
-      'name': '2048',
-      'icon': Icons.grid_4x4,
-      'color': Color(0xFFEDC22E),
-      'route': '/2048'
-    },
-    {
-      'name': 'Sudoku',
-      'icon': Icons.grid_on,
-      'color': Color(0xFF536DFE),
-      'route': '/sudoku'
-    },
-    {
-      'name': 'Snake',
-      'icon': Icons.timeline,
-      'color': Color(0xFF00C853),
-      'route': '/snake'
-    },
-    {
-      'name': 'Memory',
-      'icon': Icons.flip,
-      'color': Color(0xFFFFAB40),
-      'route': null
-    },
-    {
-      'name': 'Tic-Tac-Toe',
-      'icon': Icons.close,
-      'color': Color(0xFFFF5252),
-      'route': '/tictactoe'
-    },
-    {
-      'name': 'Minesweeper',
-      'icon': Icons.flag,
-      'color': Color(0xFFE040FB),
-      'route': null
-    },
-    {
-      'name': 'Sliding Puzzle',
-      'icon': Icons.image,
-      'color': Color(0xFF40C4FF),
-      'route': null
-    },
-    {
-      'name': 'Tetris',
-      'icon': Icons.view_quilt,
-      'color': Color(0xFF7C4DFF),
-      'route': null
-    },
-    {
-      'name': 'Wordle',
-      'icon': Icons.abc,
-      'color': Color(0xFF69F0AE),
-      'route': null
-    },
-    {
-      'name': 'Tower Stack',
-      'icon': Icons.layers,
-      'color': Color(0xFFFF6E40),
-      'route': null
-    },
+  @override
+  State<GameCenterPage> createState() => _GameCenterPageState();
+}
+
+class _GameCenterPageState extends State<GameCenterPage> {
+  final List<_GameInfo> _games = [
+    _GameInfo(
+      name: '2048',
+      icon: Icons.grid_4x4,
+      color: const Color(0xFFEDC22E),
+      baseXP: 30,
+      builder: (_) => const Game2048Page(),
+    ),
+    _GameInfo(
+      name: 'Sudoku',
+      icon: Icons.grid_on,
+      color: const Color(0xFF536DFE),
+      baseXP: 50,
+      builder: (_) => const SudokuPage(),
+    ),
+    _GameInfo(
+      name: 'Snake',
+      icon: Icons.timeline,
+      color: const Color(0xFF00C853),
+      baseXP: 20,
+      builder: (_) => const SnakePage(),
+    ),
+    _GameInfo(
+      name: 'Memory',
+      icon: Icons.flip,
+      color: const Color(0xFFFFAB40),
+      baseXP: 40,
+      builder: (_) => const MemoryGamePage(),
+    ),
+    _GameInfo(
+      name: 'Tic-Tac-Toe',
+      icon: Icons.close,
+      color: const Color(0xFFFF5252),
+      baseXP: 25,
+      builder: (_) => const TicTacToePage(),
+    ),
+    _GameInfo(
+      name: 'Minesweeper',
+      icon: Icons.flag,
+      color: const Color(0xFFE040FB),
+      baseXP: 45,
+      builder: (_) => const MinesweeperPage(),
+    ),
+    _GameInfo(
+      name: 'Sliding Puzzle',
+      icon: Icons.image,
+      color: const Color(0xFF40C4FF),
+      baseXP: 35,
+      builder: (_) => const SlidingPuzzlePage(),
+    ),
+    _GameInfo(
+      name: 'Tetris',
+      icon: Icons.view_quilt,
+      color: const Color(0xFF7C4DFF),
+      baseXP: 30,
+      builder: (_) => const TetrisPage(),
+    ),
+    _GameInfo(
+      name: 'Wordle',
+      icon: Icons.abc,
+      color: const Color(0xFF69F0AE),
+      baseXP: 50,
+      builder: (_) => const WordlePage(),
+    ),
+    _GameInfo(
+      name: 'Tower Stack',
+      icon: Icons.layers,
+      color: const Color(0xFFFF6E40),
+      baseXP: 20,
+      builder: (_) => const TowerStackPage(),
+    ),
   ];
+
+  void _openGame(_GameInfo game) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: game.builder),
+    ).then((_) {
+      // After returning from any game, check if a level-up happened
+      final gameProv = context.read<GamificationProvider>();
+      if (gameProv.lastLevelUp != null) {
+        _showLevelUpDialog(gameProv.lastLevelUp!);
+        gameProv.clearLevelUp();
+      }
+    });
+  }
+
+  void _showLevelUpDialog(int newLevel) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: const Color(0xFF1E2746),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('🎉', style: TextStyle(fontSize: 56)),
+            const SizedBox(height: 12),
+            Text(
+              'Level Up!',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.primary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'You reached Level $newLevel',
+              style: const TextStyle(color: Colors.white70, fontSize: 16),
+            ),
+          ],
+        ),
+        actionsAlignment: MainAxisAlignment.center,
+        actions: [
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primary,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Awesome!',
+                style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        // Transparent background to let main gradient show
         color: Colors.transparent,
         child: SafeArea(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Consumer<GamificationProvider>(
-                builder: (context, gameProvider, child) {
+                builder: (context, gp, _) {
                   return Container(
-                    padding: const EdgeInsets.all(24.0),
+                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          "Game Center",
+                          'Game Center',
                           style: TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
@@ -106,46 +194,57 @@ class GameCenterPage extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 16),
+                        // Level badge + XP
                         Row(
                           children: [
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 6),
+                                  horizontal: 14, vertical: 6),
                               decoration: BoxDecoration(
-                                color: AppTheme.primary,
+                                gradient: LinearGradient(
+                                  colors: [AppTheme.primary, Colors.blueAccent],
+                                ),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
-                                "Level ${gameProvider.currentLevel}",
+                                'Level ${gp.currentLevel}',
                                 style: const TextStyle(
                                   color: Colors.black,
                                   fontWeight: FontWeight.bold,
+                                  fontSize: 13,
                                 ),
                               ),
                             ),
                             const SizedBox(width: 12),
                             Text(
-                              "${gameProvider.currentXP} XP",
+                              gp.xpLabel,
                               style: const TextStyle(
-                                color: Colors.white70,
-                                fontWeight: FontWeight.bold,
-                              ),
+                                  color: Colors.white70,
+                                  fontWeight: FontWeight.w500),
+                            ),
+                            const Spacer(),
+                            Text(
+                              '${gp.totalXP} total XP',
+                              style: const TextStyle(
+                                  color: Colors.white38, fontSize: 11),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 10),
+                        // XP progress bar
                         ClipRRect(
                           borderRadius: BorderRadius.circular(4),
                           child: LinearProgressIndicator(
-                            value: gameProvider.levelProgress,
+                            value: gp.levelProgress,
                             backgroundColor: Colors.white10,
-                            color: AppTheme.secondary,
-                            minHeight: 6,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                                AppTheme.secondary),
+                            minHeight: 7,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          "${(gameProvider.levelProgress * 100).toInt()}% to Level ${gameProvider.currentLevel + 1}",
+                          '${(gp.levelProgress * 100).toInt()}% to Level ${gp.currentLevel + 1}  •  need ${gp.xpForNextLevel - gp.xpInCurrentLevel} more XP',
                           style: const TextStyle(
                               color: Colors.white38, fontSize: 10),
                         ),
@@ -156,8 +255,9 @@ class GameCenterPage extends StatelessWidget {
               ),
               Expanded(
                 child: GridView.builder(
-                  padding: const EdgeInsets.all(16),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+                  gridDelegate:
+                      const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
                     crossAxisSpacing: 16,
                     mainAxisSpacing: 16,
@@ -167,68 +267,7 @@ class GameCenterPage extends StatelessWidget {
                   itemBuilder: (context, index) {
                     final game = _games[index];
                     return GestureDetector(
-                      onTap: () {
-                        if (game['name'] == 'Tic-Tac-Toe') {
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => const TicTacToePage()));
-                        } else if (game['name'] == '2048') {
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => const Game2048Page()));
-                        } else if (game['name'] == 'Sudoku') {
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => const SudokuPage()));
-                        } else if (game['name'] == 'Snake') {
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => const SnakePage()));
-                        } else if (game['name'] == 'Memory') {
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) =>
-                                      const MemoryGamePage()));
-                        } else if (game['name'] == 'Minesweeper') {
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) =>
-                                      const MinesweeperPage()));
-                        } else if (game['name'] == 'Sliding Puzzle') {
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) =>
-                                      const SlidingPuzzlePage()));
-                        } else if (game['name'] == 'Tetris') {
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => const TetrisPage()));
-                        } else if (game['name'] == 'Wordle') {
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => const WordlePage()));
-                        } else if (game['name'] == 'Tower Stack') {
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) =>
-                                      const TowerStackPage()));
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                                content: Text("${game['name']} coming soon!")),
-                          );
-                        }
-                      },
+                      onTap: () => _openGame(game),
                       child: GlassContainer(
                         padding: const EdgeInsets.all(16),
                         child: Column(
@@ -237,23 +276,28 @@ class GameCenterPage extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color:
-                                    (game['color'] as Color).withOpacity(0.2),
+                                color: game.color.withOpacity(0.2),
                                 shape: BoxShape.circle,
                               ),
-                              child: Icon(
-                                game['icon'] as IconData,
-                                color: game['color'] as Color,
-                                size: 32,
-                              ),
+                              child: Icon(game.icon,
+                                  color: game.color, size: 32),
                             ),
-                            const SizedBox(height: 12),
+                            const SizedBox(height: 10),
                             Text(
-                              game['name'] as String,
+                              game.name,
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
-                                fontSize: 16,
+                                fontSize: 15,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '+${game.baseXP} XP',
+                              style: TextStyle(
+                                color: game.color.withOpacity(0.8),
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ],

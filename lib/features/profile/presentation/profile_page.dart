@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/widgets/glass_container.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_theme.dart';
@@ -97,7 +98,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const SizedBox(height: 40),
+                        const SizedBox(height: 2),
                         Stack(
                           children: [
                             Container(
@@ -113,21 +114,36 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                                 ],
                               ),
                               child: CircleAvatar(
-                                radius: 50,
-                                backgroundImage: user.photoUrl != null &&
+                                radius: 45,
+                                backgroundColor: AppTheme.primary.withOpacity(0.1),
+                                child: user.photoUrl != null &&
                                         user.photoUrl!.isNotEmpty
-                                    ? NetworkImage(user.photoUrl!)
-                                    : null,
-                                backgroundColor: Colors.white10,
-                                child: user.photoUrl == null ||
-                                        user.photoUrl!.isEmpty
-                                    ? Text(
+                                    ? ClipOval(
+                                        child: CachedNetworkImage(
+                                          imageUrl: user.photoUrl!,
+                                          width: 90,
+                                          height: 90,
+                                          fit: BoxFit.cover,
+                                          placeholder: (context, url) =>
+                                              const CircularProgressIndicator(
+                                                  strokeWidth: 2),
+                                          errorWidget: (context, url, error) =>
+                                              Text(
+                                            user.displayName?[0]
+                                                    .toUpperCase() ??
+                                                'U',
+                                            style: GoogleFonts.outfit(
+                                                fontSize: 40,
+                                                color: Colors.white),
+                                          ),
+                                        ),
+                                      )
+                                    : Text(
                                         user.displayName?[0].toUpperCase() ??
                                             'U',
                                         style: GoogleFonts.outfit(
                                             fontSize: 40, color: Colors.white),
-                                      )
-                                    : null,
+                                      ),
                               ),
                             ),
                             Positioned(
@@ -150,16 +166,20 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         )
                             .animate()
                             .scale(duration: 600.ms, curve: Curves.elasticOut),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 4),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text(
-                              user.displayName ?? 'User',
-                              style: GoogleFonts.outfit(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                            Flexible(
+                              child: Text(
+                                user.displayName ?? 'User',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.outfit(
+                                  fontSize: 20, // Reduced from 24
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
                             IconButton(

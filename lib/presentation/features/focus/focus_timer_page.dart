@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../services/focus_timer_service.dart';
+import '../../../presentation/providers/analytics_provider.dart';
 import '../../shared/glass_container.dart';
 
 class FocusTimerPage extends StatefulWidget {
@@ -26,7 +27,6 @@ class _FocusTimerPageState extends State<FocusTimerPage>
       vsync: this,
     )..repeat();
 
-    // Initialize timer with subject
     Future.microtask(() {
       final timerService = context.read<FocusTimerService>();
       if (!timerService.isRunning) {
@@ -74,23 +74,14 @@ class _FocusTimerPageState extends State<FocusTimerPage>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Timer Display
                     _buildTimerDisplay(timerService),
                     const SizedBox(height: 48),
-
-                    // Progress Ring
                     _buildProgressRing(timerService),
                     const SizedBox(height: 48),
-
-                    // Control Buttons
                     _buildControls(timerService),
                     const SizedBox(height: 32),
-
-                    // Presets
                     _buildPresets(timerService),
                     const SizedBox(height: 32),
-
-                    // Session Info
                     _buildSessionInfo(timerService),
                   ],
                 ),
@@ -192,10 +183,7 @@ class _FocusTimerPageState extends State<FocusTimerPage>
             const SizedBox(height: 4),
             Text(
               'Complete',
-              style: GoogleFonts.outfit(
-                fontSize: 12,
-                color: Colors.white70,
-              ),
+              style: GoogleFonts.outfit(fontSize: 12, color: Colors.white70),
             ),
           ],
         ),
@@ -207,7 +195,7 @@ class _FocusTimerPageState extends State<FocusTimerPage>
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        // Pause/Resume Button
+        // Play / Pause button
         GlassContainer(
           padding: const EdgeInsets.all(16),
           borderRadius: BorderRadius.circular(50),
@@ -230,7 +218,7 @@ class _FocusTimerPageState extends State<FocusTimerPage>
         ),
         const SizedBox(width: 16),
 
-        // Stop Button
+        // Stop / Save button
         GlassContainer(
           padding: const EdgeInsets.all(16),
           borderRadius: BorderRadius.circular(50),
@@ -240,23 +228,27 @@ class _FocusTimerPageState extends State<FocusTimerPage>
             onPressed: () {
               showDialog(
                 context: context,
-                builder: (context) => AlertDialog(
+                builder: (ctx) => AlertDialog(
                   backgroundColor: const Color(0xFF1E2746),
                   title: const Text('End Session?'),
                   content: Text(
-                    'Save ${timerService.formattedTime} to your study time?',
+                    'Save this session to your study time?',
                     style: GoogleFonts.outfit(),
                   ),
                   actions: [
                     TextButton(
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () => Navigator.pop(ctx),
                       child: const Text('Continue'),
                     ),
                     TextButton(
                       onPressed: () async {
                         await timerService.completeSession();
-                        Navigator.pop(context);
-                        Navigator.pop(context);
+                        if (ctx.mounted) {
+                          // Refresh analytics so dashboard updates immediately
+                          context.read<AnalyticsProvider>().refreshData();
+                          Navigator.pop(ctx);
+                          Navigator.pop(context);
+                        }
                       },
                       child: const Text('Save & Exit',
                           style: TextStyle(color: Color(0xFF00F0FF))),
@@ -287,37 +279,247 @@ class _FocusTimerPageState extends State<FocusTimerPage>
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: TimerPreset.presets.map((preset) {
-            return GestureDetector(
-              onTap: () {
-                timerService.setDuration(preset.seconds);
-              },
-              child: GlassContainer(
+          children: [
+            // Existing preset chips (with active highlight)
+            ...TimerPreset.presets.map((preset) {
+              final isActive = !timerService.isRunning &&
+                  timerService.sessionDuration == preset.seconds;
+              return GestureDetector(
+                onTap: () => timerService.setDuration(preset.seconds),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isActive
+                        ? const Color(0xFF00F0FF).withOpacity(0.15)
+                        : Colors.white.withOpacity(0.07),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isActive
+                          ? const Color(0xFF00F0FF).withOpacity(0.6)
+                          : Colors.white12,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(preset.icon, style: const TextStyle(fontSize: 16)),
+                      const SizedBox(width: 6),
+                      Text(
+                        preset.name,
+                        style: GoogleFonts.outfit(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: isActive
+                              ? const Color(0xFF00F0FF)
+                              : Colors.white70,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
+
+            // ⏱️ Custom Duration chip
+            GestureDetector(
+              onTap: () => _showCustomDurationDialog(timerService),
+              child: Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                borderRadius: BorderRadius.circular(20),
+                decoration: BoxDecoration(
+                  color: Colors.purpleAccent.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                      color: Colors.purpleAccent.withOpacity(0.5)),
+                ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      preset.icon,
-                      style: const TextStyle(fontSize: 16),
-                    ),
+                    const Text('⏱️', style: TextStyle(fontSize: 16)),
                     const SizedBox(width: 6),
                     Text(
-                      preset.name,
+                      'Custom',
                       style: GoogleFonts.outfit(
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
+                        color: Colors.purpleAccent,
                       ),
                     ),
                   ],
                 ),
               ),
-            );
-          }).toList(),
+            ),
+          ],
         ),
       ],
+    );
+  }
+
+  /// Custom duration picker dialog (MM : SS + quick chips)
+  void _showCustomDurationDialog(FocusTimerService timerService) {
+    int minutes = timerService.sessionDuration ~/ 60;
+    int seconds = timerService.sessionDuration % 60;
+
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (dialogCtx, setDialogState) => AlertDialog(
+          backgroundColor: const Color(0xFF1E2746),
+          title: Text(
+            '⏱️  Set Custom Duration',
+            style: GoogleFonts.outfit(fontWeight: FontWeight.w600),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Choose your focus session length',
+                style:
+                    GoogleFonts.outfit(color: Colors.white54, fontSize: 12),
+              ),
+              const SizedBox(height: 24),
+
+              // MM : SS picker
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Minutes
+                  Column(
+                    children: [
+                      Text('Min',
+                          style: GoogleFonts.outfit(
+                              color: Colors.white54, fontSize: 12)),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.remove_circle_outline,
+                                color: Colors.white54),
+                            onPressed: () => setDialogState(
+                                () => minutes = (minutes - 1).clamp(0, 180)),
+                          ),
+                          SizedBox(
+                            width: 44,
+                            child: Text(
+                              minutes.toString().padLeft(2, '0'),
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.outfit(
+                                fontSize: 32,
+                                fontWeight: FontWeight.bold,
+                                color: const Color(0xFF00F0FF),
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.add_circle_outline,
+                                color: Colors.white54),
+                            onPressed: () => setDialogState(
+                                () => minutes = (minutes + 1).clamp(0, 180)),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+
+                  Padding(
+                    padding: const EdgeInsets.only(top: 18),
+                    child: Text(
+                      ':',
+                      style: GoogleFonts.outfit(
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white54),
+                    ),
+                  ),
+
+                  // Seconds (steps of 5)
+                  Column(
+                    children: [
+                      Text('Sec',
+                          style: GoogleFonts.outfit(
+                              color: Colors.white54, fontSize: 12)),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.remove_circle_outline,
+                                color: Colors.white54),
+                            onPressed: () => setDialogState(
+                                () => seconds = (seconds - 5).clamp(0, 55)),
+                          ),
+                          SizedBox(
+                            width: 44,
+                            child: Text(
+                              seconds.toString().padLeft(2, '0'),
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.outfit(
+                                fontSize: 32,
+                                fontWeight: FontWeight.bold,
+                                color: const Color(0xFF00F0FF),
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.add_circle_outline,
+                                color: Colors.white54),
+                            onPressed: () => setDialogState(
+                                () => seconds = (seconds + 5).clamp(0, 55)),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 12),
+
+              // Quick duration chips
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                children: [5, 10, 15, 30, 45, 60].map((m) {
+                  return ActionChip(
+                    label: Text('${m}m',
+                        style:
+                            const TextStyle(fontSize: 11, color: Colors.white)),
+                    backgroundColor: Colors.white10,
+                    side: BorderSide.none,
+                    onPressed: () => setDialogState(() {
+                      minutes = m;
+                      seconds = 0;
+                    }),
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogCtx),
+              child: Text('Cancel',
+                  style: GoogleFonts.outfit(color: Colors.white54)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF00F0FF).withOpacity(0.2),
+                foregroundColor: const Color(0xFF00F0FF),
+                side: const BorderSide(color: Color(0xFF00F0FF), width: 1),
+              ),
+              onPressed: () {
+                final totalSeconds = (minutes * 60) + seconds;
+                if (totalSeconds > 0) {
+                  timerService.setDuration(totalSeconds);
+                }
+                Navigator.pop(dialogCtx);
+              },
+              child: Text('Set Timer', style: GoogleFonts.outfit()),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -333,16 +535,12 @@ class _FocusTimerPageState extends State<FocusTimerPage>
               Text(
                 'Session Details',
                 style: GoogleFonts.outfit(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
+                    fontSize: 14, fontWeight: FontWeight.w600),
               ),
               Text(
-                '${widget.subject} • ${(timerService.sessionDuration / 60).toInt()}m',
-                style: GoogleFonts.outfit(
-                  fontSize: 12,
-                  color: Colors.white70,
-                ),
+                '${widget.subject} • ${(timerService.sessionDuration / 60).toStringAsFixed(0)}m',
+                style:
+                    GoogleFonts.outfit(fontSize: 12, color: Colors.white70),
               ),
             ],
           ),
@@ -350,15 +548,12 @@ class _FocusTimerPageState extends State<FocusTimerPage>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Status',
-                style: GoogleFonts.outfit(
-                  fontSize: 12,
-                  color: Colors.white70,
-                ),
-              ),
+              Text('Status',
+                  style: GoogleFonts.outfit(
+                      fontSize: 12, color: Colors.white70)),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: timerService.isRunning
                       ? const Color(0xFF00FF88).withOpacity(0.2)
@@ -374,9 +569,7 @@ class _FocusTimerPageState extends State<FocusTimerPage>
                 child: Text(
                   timerService.isRunning ? '🟢 Active' : '⏸️ Paused',
                   style: GoogleFonts.outfit(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
+                      fontSize: 12, fontWeight: FontWeight.w500),
                 ),
               ),
             ],

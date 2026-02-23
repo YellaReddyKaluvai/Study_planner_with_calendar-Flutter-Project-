@@ -9,20 +9,27 @@ class AnalyticsService {
   AnalyticsService._internal();
 
   static const String _sessionsKey = 'study_sessions';
-  late SharedPreferences _prefs;
+  SharedPreferences? _prefs;
 
+  /// Lazily initialise SharedPreferences if not already done.
+  Future<SharedPreferences> _getPrefs() async {
+    _prefs ??= await SharedPreferences.getInstance();
+    return _prefs!;
+  }
+
+  /// Legacy init() for backward compatibility (no-op if already done).
   Future<void> init() async {
-    _prefs = await SharedPreferences.getInstance();
+    await _getPrefs();
   }
 
   /// Record a completed study session
   Future<void> recordSession(StudySession session) async {
     try {
+      final prefs = await _getPrefs();
       final sessions = await getAllSessions();
       sessions.add(session);
-
       final jsonList = sessions.map((s) => s.toJson()).toList();
-      await _prefs.setString(_sessionsKey, jsonEncode(jsonList));
+      await prefs.setString(_sessionsKey, jsonEncode(jsonList));
     } catch (e) {
       print("Error recording session: $e");
     }
@@ -31,9 +38,9 @@ class AnalyticsService {
   /// Get all recorded study sessions
   Future<List<StudySession>> getAllSessions() async {
     try {
-      final jsonString = _prefs.getString(_sessionsKey);
+      final prefs = await _getPrefs();
+      final jsonString = prefs.getString(_sessionsKey);
       if (jsonString == null) return [];
-
       final jsonList = jsonDecode(jsonString) as List;
       return jsonList
           .map((json) => StudySession.fromJson(json as Map<String, dynamic>))
@@ -58,9 +65,8 @@ class AnalyticsService {
     final sessions = await getAllSessions();
     final dateStr =
         '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-
     return sessions
-        .where((s) => s.startTime.toString().startsWith(dateStr))
+        .where((s) => s.date.toIso8601String().startsWith(dateStr))
         .fold<int>(0, (sum, s) => sum + s.durationMinutes);
   }
 
@@ -104,13 +110,11 @@ class AnalyticsService {
   Future<String?> getMostProductiveSubject() async {
     final sessions = await getAllSessions();
     if (sessions.isEmpty) return null;
-
     final subjectMap = <String, int>{};
     for (final session in sessions) {
       subjectMap[session.subject] =
           (subjectMap[session.subject] ?? 0) + session.durationMinutes;
     }
-
     return subjectMap.isEmpty
         ? null
         : subjectMap.entries.reduce((a, b) => a.value > b.value ? a : b).key;
@@ -120,12 +124,10 @@ class AnalyticsService {
   Future<Map<String, int>> getStudyTimeBySubject() async {
     final sessions = await getAllSessions();
     final result = <String, int>{};
-
     for (final session in sessions) {
       result[session.subject] =
           (result[session.subject] ?? 0) + session.durationMinutes;
     }
-
     return result;
   }
 
@@ -135,28 +137,24 @@ class AnalyticsService {
     final today = DateTime.now();
     final todayStr =
         '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
-
     return sessions
-        .where((s) => s.startTime.toString().startsWith(todayStr))
+        .where((s) => s.date.toIso8601String().startsWith(todayStr))
         .length;
   }
 
   /// Get productivity score (0-100) based on sessions this week
   Future<int> getWeeklyProductivityScore() async {
     final sessions = await getSessionsFromLastDays(7);
-    final targetMinutes = 300; // 5 hours per week target
-
+    const targetMinutes = 300; // 5 hours per week target
     if (sessions.isEmpty) return 0;
-
     final totalMinutes =
         sessions.fold<int>(0, (sum, s) => sum + s.durationMinutes);
-    final score = ((totalMinutes / targetMinutes) * 100).toInt().clamp(0, 100);
-
-    return score;
+    return ((totalMinutes / targetMinutes) * 100).toInt().clamp(0, 100);
   }
 
   /// Clear all sessions (use with caution!)
   Future<void> clearAllSessions() async {
-    await _prefs.remove(_sessionsKey);
+    final prefs = await _getPrefs();
+    await prefs.remove(_sessionsKey);
   }
 }

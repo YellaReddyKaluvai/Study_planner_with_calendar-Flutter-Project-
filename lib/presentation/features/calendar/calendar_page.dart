@@ -225,55 +225,160 @@ class _CalendarPageState extends State<CalendarPage> {
   }
 
   Widget _buildTaskItem(Task task, TaskProvider provider) {
-    return GlassContainer(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        children: [
-          Container(
-            width: 4,
-            height: 40,
-            decoration: BoxDecoration(
-              color: task.color,
-              borderRadius: BorderRadius.circular(4),
+    return Dismissible(
+      key: Key('calendar_${task.id}'),
+      background: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: AppTheme.success.withOpacity(0.8),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        alignment: Alignment.centerLeft,
+        padding: const EdgeInsets.only(left: 24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              task.isCompleted ? Icons.undo : Icons.check_circle,
+              color: Colors.white,
+              size: 24,
             ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  task.title,
-                  style: const TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.bold),
+            const SizedBox(height: 4),
+            Text(
+              task.isCompleted ? 'Undo' : 'Complete',
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 10,
+              ),
+            ),
+          ],
+        ),
+      ),
+      secondaryBackground: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: AppTheme.error.withOpacity(0.8),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 24),
+        child: const Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.delete_forever, color: Colors.white, size: 24),
+            SizedBox(height: 4),
+            Text(
+              'Delete',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 10,
+              ),
+            ),
+          ],
+        ),
+      ),
+      confirmDismiss: (direction) async {
+        if (direction == DismissDirection.startToEnd) {
+          provider.toggleTaskCompletion(task.id);
+          return false; // Don't remove from tree, provider handles state
+        } else {
+          final result = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              backgroundColor: const Color(0xFF1A1F2B),
+              title: const Text('Delete Task', style: TextStyle(color: Colors.white)),
+              content: Text('Delete "${task.title}"?',
+                  style: const TextStyle(color: Colors.white70)),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Cancel'),
                 ),
-                Text(
-                  "${_formatTime(task.startTime)} - ${_formatTime(task.endTime)}",
-                  style: const TextStyle(color: Colors.white54, fontSize: 12),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text('Delete', style: TextStyle(color: Colors.redAccent)),
                 ),
-                if (task.hasAiPlan)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Row(
-                      children: [
-                        Icon(Icons.auto_awesome,
-                            size: 12, color: AppTheme.secondary),
-                        const SizedBox(width: 4),
-                        Text("AI Plan Ready",
-                            style: TextStyle(
-                                color: AppTheme.secondary, fontSize: 10)),
-                      ],
-                    ),
-                  )
               ],
             ),
+          );
+          if (result == true) {
+            provider.deleteTask(task.id);
+          }
+          return result ?? false;
+        }
+      },
+      child: GestureDetector(
+        onTap: () {
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (context) => TaskCreationSheet(task: task),
+          );
+        },
+        child: GlassContainer(
+          margin: const EdgeInsets.only(bottom: 12),
+          child: Row(
+            children: [
+              // Colour bar — faded when completed
+              Container(
+                width: 4,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: task.isCompleted
+                      ? task.color.withOpacity(0.3)
+                      : task.color,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      task.title,
+                      style: TextStyle(
+                        color: task.isCompleted
+                            ? Colors.white38
+                            : Colors.white,
+                        fontWeight: FontWeight.bold,
+                        decoration: task.isCompleted
+                            ? TextDecoration.lineThrough
+                            : TextDecoration.none,
+                        decorationColor: Colors.white38,
+                      ),
+                    ),
+                    Text(
+                      "${_formatTime(task.startTime)} - ${_formatTime(task.endTime)}",
+                      style: const TextStyle(color: Colors.white54, fontSize: 12),
+                    ),
+                    if (task.hasAiPlan)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Row(
+                          children: [
+                            Icon(Icons.auto_awesome,
+                                size: 12, color: AppTheme.secondary),
+                            const SizedBox(width: 4),
+                            Text("AI Plan Ready",
+                                style: TextStyle(
+                                    color: AppTheme.secondary, fontSize: 10)),
+                          ],
+                        ),
+                      )
+                  ],
+                ),
+              ),
+              // Only keep a subtle arrow or edit indicator if needed, 
+              // but user asked for "only edit option... when we press on that task"
+              // So I will remove all icons for a ultra-clean look.
+              const Icon(Icons.chevron_right, color: Colors.white12, size: 20),
+            ],
           ),
-          IconButton(
-            icon: const Icon(Icons.delete_outline,
-                color: Colors.white30, size: 20),
-            onPressed: () => provider.deleteTask(task.id),
-          )
-        ],
+        ),
       ),
     );
   }
@@ -412,32 +517,53 @@ class _CalendarPageState extends State<CalendarPage> {
                       right: 8,
                       height: height < 20 ? 20 : height,
                       child: GestureDetector(
-                        onTap: () {},
+                        onTap: () {
+                          _showDayViewTaskActions(
+                              context, task, taskProvider);
+                        },
                         child: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: task.color.withOpacity(0.8),
+                            color: task.isCompleted
+                                ? task.color.withOpacity(0.3)
+                                : task.color.withOpacity(0.8),
                             borderRadius: BorderRadius.circular(8),
                             border:
                                 Border.all(color: task.color.withOpacity(0.5)),
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          child: Row(
                             children: [
-                              Text(
-                                task.title,
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: _hourHeight < 50 ? 10 : 12),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              if (height > 40 && _hourHeight > 60)
-                                Text(
-                                  "${_formatTime(task.startTime)} - ${_formatTime(task.endTime)}",
-                                  style: const TextStyle(
-                                      color: Colors.white70, fontSize: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      task.title,
+                                      style: TextStyle(
+                                        color: task.isCompleted
+                                            ? Colors.white38
+                                            : Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: _hourHeight < 50 ? 10 : 12,
+                                        decoration: task.isCompleted
+                                            ? TextDecoration.lineThrough
+                                            : TextDecoration.none,
+                                        decorationColor: Colors.white38,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    if (height > 40 && _hourHeight > 60)
+                                      Text(
+                                        "${_formatTime(task.startTime)} - ${_formatTime(task.endTime)}",
+                                        style: const TextStyle(
+                                            color: Colors.white70, fontSize: 10),
+                                      ),
+                                  ],
                                 ),
+                              ),
+                              if (task.isCompleted)
+                                const Icon(Icons.check_circle,
+                                    size: 14, color: Colors.white70),
                             ],
                           ),
                         ),
@@ -450,6 +576,107 @@ class _CalendarPageState extends State<CalendarPage> {
           ),
         ),
       ],
+    );
+  }
+
+  void _showDayViewTaskActions(
+      BuildContext context, Task task, TaskProvider provider) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return GlassContainer(
+          margin: EdgeInsets.zero,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          child: SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 8),
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.white24,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 12,
+                        height: 12,
+                        decoration: BoxDecoration(
+                            color: task.color, shape: BoxShape.circle),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          task.title,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Divider(color: Colors.white10),
+                // Complete / Incomplete
+                ListTile(
+                  leading: Icon(
+                    task.isCompleted
+                        ? Icons.check_circle
+                        : Icons.check_circle_outline,
+                    color: task.isCompleted ? AppTheme.success : Colors.white70,
+                  ),
+                  title: Text(
+                    task.isCompleted ? 'Mark as Incomplete' : 'Mark as Complete',
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    provider.toggleTaskCompletion(task.id);
+                  },
+                ),
+                // Edit
+                ListTile(
+                  leading:
+                      const Icon(Icons.edit_outlined, color: Colors.white70),
+                  title: const Text('Edit Task',
+                      style: TextStyle(color: Colors.white)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (context) => TaskCreationSheet(task: task),
+                    );
+                  },
+                ),
+                // Delete
+                ListTile(
+                  leading: const Icon(Icons.delete_outline, color: Colors.red),
+                  title: const Text('Delete Task',
+                      style: TextStyle(color: Colors.red)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    provider.deleteTask(task.id);
+                  },
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 

@@ -1,5 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../../providers/gamification_provider.dart';
 
 class MinesweeperPage extends StatefulWidget {
   const MinesweeperPage({super.key});
@@ -18,6 +20,7 @@ class _MinesweeperPageState extends State<MinesweeperPage> {
   List<List<bool>> flagged = [];
   bool gameOver = false;
   bool won = false;
+  bool _xpAwarded = false;
 
   @override
   void initState() {
@@ -26,26 +29,25 @@ class _MinesweeperPageState extends State<MinesweeperPage> {
   }
 
   void _resetGame() {
-    board = List.generate(rows, (_) => List.filled(cols, 0));
-    revealed = List.generate(rows, (_) => List.filled(cols, false));
-    flagged = List.generate(rows, (_) => List.filled(cols, false));
-    gameOver = false;
-    won = false;
-    _placeMines();
-    _calculateNumbers();
-    setState(() {});
+    setState(() {
+      board = List.generate(rows, (_) => List.filled(cols, 0));
+      revealed = List.generate(rows, (_) => List.filled(cols, false));
+      flagged = List.generate(rows, (_) => List.filled(cols, false));
+      gameOver = false;
+      won = false;
+      _xpAwarded = false;
+      _placeMines();
+      _calculateNumbers();
+    });
   }
 
   void _placeMines() {
-    int minesPlaced = 0;
-    Random random = Random();
-    while (minesPlaced < totalMines) {
+    int placed = 0;
+    final random = Random();
+    while (placed < totalMines) {
       int r = random.nextInt(rows);
       int c = random.nextInt(cols);
-      if (board[r][c] != -1) {
-        board[r][c] = -1; // -1 represents a mine
-        minesPlaced++;
-      }
+      if (board[r][c] != -1) { board[r][c] = -1; placed++; }
     }
   }
 
@@ -56,15 +58,8 @@ class _MinesweeperPageState extends State<MinesweeperPage> {
         int count = 0;
         for (int i = -1; i <= 1; i++) {
           for (int j = -1; j <= 1; j++) {
-            int nr = r + i;
-            int nc = c + j;
-            if (nr >= 0 &&
-                nr < rows &&
-                nc >= 0 &&
-                nc < cols &&
-                board[nr][nc] == -1) {
-              count++;
-            }
+            int nr = r + i, nc = c + j;
+            if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && board[nr][nc] == -1) count++;
           }
         }
         board[r][c] = count;
@@ -74,11 +69,11 @@ class _MinesweeperPageState extends State<MinesweeperPage> {
 
   void _reveal(int r, int c) {
     if (gameOver || revealed[r][c] || flagged[r][c]) return;
-
     setState(() {
       revealed[r][c] = true;
       if (board[r][c] == -1) {
         gameOver = true;
+        _awardXP(false);
         _showGameOverDialog(false);
       } else if (board[r][c] == 0) {
         _revealNeighbors(r, c);
@@ -90,8 +85,7 @@ class _MinesweeperPageState extends State<MinesweeperPage> {
   void _revealNeighbors(int r, int c) {
     for (int i = -1; i <= 1; i++) {
       for (int j = -1; j <= 1; j++) {
-        int nr = r + i;
-        int nc = c + j;
+        int nr = r + i, nc = c + j;
         if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && !revealed[nr][nc]) {
           _reveal(nr, nc);
         }
@@ -101,59 +95,76 @@ class _MinesweeperPageState extends State<MinesweeperPage> {
 
   void _toggleFlag(int r, int c) {
     if (gameOver || revealed[r][c]) return;
-    setState(() {
-      flagged[r][c] = !flagged[r][c];
-    });
+    setState(() => flagged[r][c] = !flagged[r][c]);
   }
 
   void _checkWin() {
-    int unrevealedCount = 0;
+    int unveiled = 0;
     for (int r = 0; r < rows; r++) {
       for (int c = 0; c < cols; c++) {
-        if (!revealed[r][c]) unrevealedCount++;
+        if (!revealed[r][c]) unveiled++;
       }
     }
-    if (unrevealedCount == totalMines) {
+    if (unveiled == totalMines) {
       won = true;
       gameOver = true;
+      _awardXP(true);
       _showGameOverDialog(true);
     }
   }
 
+  void _awardXP(bool success) {
+    if (_xpAwarded) return;
+    _xpAwarded = true;
+    final xp = success ? 45 : 5;
+    context.read<GamificationProvider>().addXP(xp);
+  }
+
   void _showGameOverDialog(bool success) {
+    final xp = success ? 45 : 5;
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (_) => AlertDialog(
-        title: Text(success ? "Victory!" : "Game Over"),
-        content:
-            Text(success ? "You cleared the minefield!" : "You hit a mine!"),
+        backgroundColor: const Color(0xFF1E2746),
+        title: Text(
+          success ? '🎉 Victory!' : '💥 Game Over',
+          style: const TextStyle(color: Colors.white),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              success ? 'You cleared the minefield!' : 'You hit a mine!',
+              style: const TextStyle(color: Colors.white70),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '+$xp XP earned!',
+              style: const TextStyle(
+                  color: Color(0xFF00F0FF),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16),
+            ),
+          ],
+        ),
         actions: [
           TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _resetGame();
-            },
-            child: const Text("Play Again"),
+            onPressed: () { Navigator.pop(context); _resetGame(); },
+            child: const Text('Play Again'),
           ),
         ],
       ),
     );
   }
 
-  // --- UI Helpers ---
-  Color _getNumberColor(int number) {
-    switch (number) {
-      case 1:
-        return Colors.blueAccent;
-      case 2:
-        return Colors.greenAccent;
-      case 3:
-        return Colors.redAccent;
-      case 4:
-        return Colors.deepPurpleAccent;
-      default:
-        return Colors.white;
+  Color _getNumberColor(int n) {
+    switch (n) {
+      case 1: return Colors.blueAccent;
+      case 2: return Colors.greenAccent;
+      case 3: return Colors.redAccent;
+      case 4: return Colors.deepPurpleAccent;
+      default: return Colors.white;
     }
   }
 
@@ -162,12 +173,10 @@ class _MinesweeperPageState extends State<MinesweeperPage> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text("Minesweeper"),
+        title: const Text('Minesweeper'),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        actions: [
-          IconButton(icon: const Icon(Icons.refresh), onPressed: _resetGame),
-        ],
+        actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: _resetGame)],
       ),
       body: Container(
         decoration: const BoxDecoration(
@@ -190,8 +199,7 @@ class _MinesweeperPageState extends State<MinesweeperPage> {
               ),
               itemCount: rows * cols,
               itemBuilder: (context, index) {
-                int r = index ~/ cols;
-                int c = index % cols;
+                int r = index ~/ cols, c = index % cols;
                 return GestureDetector(
                   onTap: () => _reveal(r, c),
                   onLongPress: () => _toggleFlag(r, c),
@@ -206,17 +214,15 @@ class _MinesweeperPageState extends State<MinesweeperPage> {
                     alignment: Alignment.center,
                     child: revealed[r][c]
                         ? (board[r][c] == -1
-                            ? const Icon(Icons.emergency,
-                                color: Colors.red, size: 20)
+                            ? const Icon(Icons.emergency, color: Colors.red, size: 20)
                             : (board[r][c] > 0
-                                ? Text("${board[r][c]}",
+                                ? Text('${board[r][c]}',
                                     style: TextStyle(
                                         color: _getNumberColor(board[r][c]),
                                         fontWeight: FontWeight.bold))
                                 : null))
                         : (flagged[r][c]
-                            ? const Icon(Icons.flag,
-                                color: Colors.orange, size: 20)
+                            ? const Icon(Icons.flag, color: Colors.orange, size: 20)
                             : null),
                   ),
                 );

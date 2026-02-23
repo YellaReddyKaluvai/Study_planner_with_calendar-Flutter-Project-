@@ -47,21 +47,29 @@ class AuthService {
   // Sign In with Google
   Future<User?> signInWithGoogle() async {
     try {
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) return null; // User canceled
+      if (kIsWeb) {
+        final GoogleAuthProvider googleProvider = GoogleAuthProvider();
+        final UserCredential result =
+            await _auth.signInWithPopup(googleProvider);
+        await _updateUserData(result.user);
+        return result.user;
+      } else {
+        final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+        if (googleUser == null) return null; // User canceled
 
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
+        final GoogleSignInAuthentication googleAuth =
+            await googleUser.authentication;
 
-      final AuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
+        final AuthCredential credential = GoogleAuthProvider.credential(
+          accessToken: googleAuth.accessToken,
+          idToken: googleAuth.idToken,
+        );
 
-      final UserCredential result =
-          await _auth.signInWithCredential(credential);
-      await _updateUserData(result.user);
-      return result.user;
+        final UserCredential result =
+            await _auth.signInWithCredential(credential);
+        await _updateUserData(result.user);
+        return result.user;
+      }
     } catch (e) {
       debugPrint("Error signing in with Google: $e");
       rethrow;
@@ -72,10 +80,13 @@ class AuthService {
   Future<void> signOut() async {
     try {
       await _googleSignIn.signOut();
-      await _auth.signOut();
+      if (kIsWeb) {
+        await _googleSignIn.disconnect();
+      }
     } catch (e) {
       debugPrint("Error signing out: $e");
     }
+    await _auth.signOut();
   }
 
   // Save User Data to Firestore
@@ -88,7 +99,7 @@ class AuthService {
       'uid': user.uid,
       'email': user.email,
       'displayName': user.displayName ?? '',
-      'photoURL': user.photoURL ?? '',
+      'photoUrl': user.photoURL ?? '',
       'lastLogin': FieldValue.serverTimestamp(),
     };
 

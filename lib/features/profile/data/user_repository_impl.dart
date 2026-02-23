@@ -39,9 +39,9 @@ class UserRepositoryImpl implements UserRepository {
       final data = snapshot.data()!;
       return UserEntity(
         uid: uid,
-        email: data['email'] ?? '',
-        displayName: data['displayName'],
-        photoUrl: data['photoUrl'],
+        email: data['email'] ?? data['Email'] ?? '',
+        displayName: data['displayName'] ?? data['DisplayName'],
+        photoUrl: data['photoUrl'] ?? data['photoURL'],
         createdAt: (data['createdAt'] as Timestamp?)?.toDate(),
         lastLoginAt: (data['lastLoginAt'] as Timestamp?)?.toDate(),
       );

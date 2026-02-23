@@ -15,6 +15,7 @@ class _TowerStackPageState extends State<TowerStackPage>
   int _score = 0;
   bool _gameOver = false;
   bool _isPlaying = false;
+  bool _xpAwarded = false;
 
   // Blocks
   final List<Block> _blocks = [];
@@ -50,9 +51,10 @@ class _TowerStackPageState extends State<TowerStackPage>
       _score = 0;
       _gameOver = false;
       _isPlaying = false;
-      _currentOffset = -200; // Start off screen
+      _xpAwarded = false;
+      _currentOffset = -200;
       _direction = 1.0;
-      _speed = 3.0; // Reset speed
+      _speed = 3.0;
     });
   }
 
@@ -121,28 +123,43 @@ class _TowerStackPageState extends State<TowerStackPage>
       _gameOver = true;
       _isPlaying = false;
     });
+
+    if (_xpAwarded) return;
+    _xpAwarded = true;
+    final xpEarned = 20 + (_score * 2);
+    context.read<GamificationProvider>().addXP(xpEarned);
+    context.read<GamificationProvider>().updateHighScore('Tower Stack', _score);
+
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) {
-        context
-            .read<GamificationProvider>()
-            .updateHighScore('Tower Stack', _score);
-        return AlertDialog(
-          title: const Text("Game Over"),
-          content: Text("You stacked $_score blocks!"),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                _resetGame();
-                _startGame();
-              },
-              child: const Text("Play Again"),
-            ),
+      builder: (_) => AlertDialog(
+        backgroundColor: const Color(0xFF1E2746),
+        title: const Text('Game Over', style: TextStyle(color: Colors.white)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('You stacked $_score blocks!',
+                style: const TextStyle(color: Colors.white70)),
+            const SizedBox(height: 8),
+            Text('+$xpEarned XP earned!',
+                style: const TextStyle(
+                    color: Color(0xFF00F0FF),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16)),
           ],
-        );
-      },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _resetGame();
+              _startGame();
+            },
+            child: const Text('Play Again'),
+          ),
+        ],
+      ),
     );
   }
 

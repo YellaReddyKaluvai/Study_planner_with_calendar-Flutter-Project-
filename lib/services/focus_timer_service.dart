@@ -18,12 +18,22 @@ class FocusTimerService extends ChangeNotifier {
   String _currentSubject = 'Study';
   Timer? _timer;
 
+  // Track when the session actually started (wall-clock) for accurate elapsed
+  DateTime? _sessionStartedAt;
+
   // Getters
   bool get isRunning => _isRunning;
   int get timeRemaining => _timeRemaining;
   int get sessionDuration => _sessionDuration;
   String get currentSubject => _currentSubject;
-  double get progress => (_sessionDuration - _timeRemaining) / _sessionDuration;
+
+  double get progress {
+    if (_sessionDuration == 0) return 0;
+    return (_sessionDuration - _timeRemaining) / _sessionDuration;
+  }
+
+  int get elapsedSeconds => _sessionDuration - _timeRemaining;
+
   String get formattedTime {
     final minutes = _timeRemaining ~/ 60;
     final seconds = _timeRemaining % 60;
@@ -50,6 +60,7 @@ class FocusTimerService extends ChangeNotifier {
     }
 
     _isRunning = true;
+    _sessionStartedAt ??= DateTime.now();
     notifyListeners();
 
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
@@ -65,7 +76,6 @@ class FocusTimerService extends ChangeNotifier {
   /// Pause the timer
   void pauseTimer() {
     if (!_isRunning) return;
-
     _isRunning = false;
     _timer?.cancel();
     notifyListeners();
@@ -76,6 +86,7 @@ class FocusTimerService extends ChangeNotifier {
     if (_isRunning || _timeRemaining == 0) return;
 
     _isRunning = true;
+    _sessionStartedAt ??= DateTime.now(); // track start time if not already set
     notifyListeners();
 
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
@@ -88,43 +99,50 @@ class FocusTimerService extends ChangeNotifier {
     });
   }
 
-  /// Stop/Reset the timer
+  /// Stop/Reset the timer without saving
   void stopTimer() {
     _isRunning = false;
     _timer?.cancel();
+    _sessionStartedAt = null;
     _timeRemaining = _sessionDuration;
     notifyListeners();
   }
 
-  /// Complete the session and record it
+  /// Complete (or save early) the session and record it
   Future<void> completeSession({int? tasksCompleted, String? notes}) async {
     _isRunning = false;
     _timer?.cancel();
 
-    final duration = _sessionDuration - _timeRemaining;
-    final durationMinutes = (duration / 60).ceil();
+    // Use elapsed seconds (how much of the session was used)
+    final elapsed = _sessionDuration - _timeRemaining;
+    final durationMinutes = (elapsed / 60).ceil().clamp(1, 9999);
 
-    // Record session in analytics
+    final now = DateTime.now();
+    final startTime = _sessionStartedAt ??
+        now.subtract(Duration(seconds: elapsed));
+
     try {
       final session = StudySession(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        date: DateTime.now(),
+        id: now.millisecondsSinceEpoch.toString(),
+        date: now,
         minutes: durationMinutes,
         subject: _currentSubject,
         taskId: 'focus_session',
-        startTime: DateTime.now().subtract(Duration(seconds: duration)),
-        endTime: DateTime.now(),
+        startTime: startTime,
+        endTime: now,
         notes: notes,
         tasksCompleted: tasksCompleted,
         focusQuality: 0.9,
       );
 
       await _analyticsService.recordSession(session);
+      print("✅ Session recorded: ${durationMinutes}m for $_currentSubject");
     } catch (e) {
-      print("Error recording session: $e");
+      print("❌ Error recording session: $e");
     }
 
     // Reset for next session
+    _sessionStartedAt = null;
     _timeRemaining = _sessionDuration;
     notifyListeners();
   }
@@ -134,6 +152,7 @@ class FocusTimerService extends ChangeNotifier {
     if (!_isRunning) {
       _sessionDuration = seconds;
       _timeRemaining = seconds;
+      _sessionStartedAt = null;
       notifyListeners();
     }
   }

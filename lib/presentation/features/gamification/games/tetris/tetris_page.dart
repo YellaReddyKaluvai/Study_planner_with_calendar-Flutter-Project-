@@ -22,6 +22,7 @@ class _TetrisPageState extends State<TetrisPage> {
   int score = 0;
   bool isGameOver = false;
   bool isPaused = false;
+  bool _xpAwarded = false;
   Timer? _timer;
 
   // Current Piece
@@ -97,6 +98,7 @@ class _TetrisPageState extends State<TetrisPage> {
       score = 0;
       isGameOver = false;
       isPaused = false;
+      _xpAwarded = false;
       _spawnPiece();
     });
     _timer?.cancel();
@@ -115,11 +117,48 @@ class _TetrisPageState extends State<TetrisPage> {
     currentPos = const Point(0, 4);
 
     if (!_isValidMove(currentPos, currentPiece)) {
-      setState(() {
-        isGameOver = true;
-        _timer?.cancel();
-      });
+      _timer?.cancel();
+      setState(() => isGameOver = true);
+      _onGameOver();
     }
+  }
+
+  void _onGameOver() {
+    if (_xpAwarded) return;
+    _xpAwarded = true;
+    final xpEarned = 30 + (score ~/ 100);
+    context.read<GamificationProvider>().addXP(xpEarned);
+    context.read<GamificationProvider>().updateHighScore('Tetris', score);
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (!mounted) return;
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => AlertDialog(
+          backgroundColor: const Color(0xFF1E2746),
+          title: const Text('Game Over', style: TextStyle(color: Colors.white)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Score: $score', style: const TextStyle(color: Colors.white70, fontSize: 18)),
+              const SizedBox(height: 8),
+              Text('+$xpEarned XP earned!',
+                  style: const TextStyle(color: Color(0xFF00F0FF), fontWeight: FontWeight.bold, fontSize: 16)),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () { Navigator.pop(context); _startGame(); },
+              child: const Text('Play Again', style: TextStyle(color: Colors.cyan)),
+            ),
+            TextButton(
+              onPressed: () { Navigator.pop(context); Navigator.pop(context); },
+              child: const Text('Exit', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        ),
+      );
+    });
   }
 
   bool _isValidMove(Point<int> pos, List<Point<int>> piece) {
@@ -300,18 +339,13 @@ class _TetrisPageState extends State<TetrisPage> {
 
             // Controls
             if (isGameOver)
-              Padding(
+              const Padding(
                 padding: EdgeInsets.all(20.0),
-                child: Builder(builder: (context) {
-                  context
-                      .read<GamificationProvider>()
-                      .updateHighScore('Tetris', score);
-                  return Text("GAME OVER",
-                      style: TextStyle(
-                          color: Colors.red,
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold));
-                }),
+                child: Text('GAME OVER',
+                    style: TextStyle(
+                        color: Colors.red,
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold)),
               )
             else
               Padding(

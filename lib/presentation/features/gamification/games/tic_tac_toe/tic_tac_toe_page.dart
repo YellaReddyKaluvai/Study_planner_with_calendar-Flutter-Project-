@@ -1,7 +1,9 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../../../core/theme/app_theme.dart';
 import '../../../../shared/glass_container.dart';
+import '../../../../providers/gamification_provider.dart';
 
 class TicTacToePage extends StatefulWidget {
   const TicTacToePage({super.key});
@@ -12,55 +14,59 @@ class TicTacToePage extends StatefulWidget {
 
 class _TicTacToePageState extends State<TicTacToePage> {
   List<String> _board = List.filled(9, '');
-  bool _isPlayerTurn = true; // Player is X
+  bool _isPlayerTurn = true;
   String _winner = '';
+  bool _xpAwarded = false;
 
   void _resetGame() {
     setState(() {
       _board = List.filled(9, '');
       _isPlayerTurn = true;
       _winner = '';
+      _xpAwarded = false;
     });
   }
 
   void _checkWinner() {
-    // Win conditions
     const wins = [
-      [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
-      [0, 3, 6], [1, 4, 7], [2, 5, 8], // Cols
-      [0, 4, 8], [2, 4, 6] // Diagonals
+      [0, 1, 2], [3, 4, 5], [6, 7, 8],
+      [0, 3, 6], [1, 4, 7], [2, 5, 8],
+      [0, 4, 8], [2, 4, 6]
     ];
 
     for (var w in wins) {
       if (_board[w[0]] != '' &&
           _board[w[0]] == _board[w[1]] &&
           _board[w[1]] == _board[w[2]]) {
-        setState(() {
-          _winner = _board[w[0]];
-        });
+        setState(() => _winner = _board[w[0]]);
+        _awardXP(_winner);
         return;
       }
     }
 
     if (!_board.contains('') && _winner == '') {
-      setState(() {
-        _winner = 'Draw';
-      });
+      setState(() => _winner = 'Draw');
+      _awardXP('Draw');
+    }
+  }
+
+  void _awardXP(String result) {
+    if (_xpAwarded) return;
+    _xpAwarded = true;
+    final xp = result == 'X' ? 25 : (result == 'Draw' ? 10 : 0);
+    if (xp > 0) {
+      context.read<GamificationProvider>().addXP(xp);
     }
   }
 
   void _aiMove() {
     if (_winner != '') return;
-
-    // Simple AI: Random empty spot
     List<int> emptySpots = [];
     for (int i = 0; i < 9; i++) {
       if (_board[i] == '') emptySpots.add(i);
     }
-
     if (emptySpots.isNotEmpty) {
-      final random = Random();
-      int index = emptySpots[random.nextInt(emptySpots.length)];
+      final index = emptySpots[Random().nextInt(emptySpots.length)];
       setState(() {
         _board[index] = 'O';
         _isPlayerTurn = true;
@@ -71,14 +77,11 @@ class _TicTacToePageState extends State<TicTacToePage> {
 
   void _handleTap(int index) {
     if (_board[index] != '' || !_isPlayerTurn || _winner != '') return;
-
     setState(() {
       _board[index] = 'X';
       _isPlayerTurn = false;
     });
-
     _checkWinner();
-
     if (_winner == '') {
       Future.delayed(const Duration(milliseconds: 500), _aiMove);
     }
@@ -88,7 +91,7 @@ class _TicTacToePageState extends State<TicTacToePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Tic-Tac-Toe"),
+        title: const Text('Tic-Tac-Toe'),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -109,12 +112,20 @@ class _TicTacToePageState extends State<TicTacToePage> {
                 if (_winner != '')
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 20.0),
-                    child: Text(
-                      _winner == 'Draw' ? "It's a Draw!" : "Winner: $_winner",
-                      style: const TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white),
+                    child: Column(
+                      children: [
+                        Text(
+                          _winner == 'Draw' ? "It's a Draw!" : 'Winner: $_winner',
+                          style: const TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white),
+                        ),
+                        if (_winner == 'X')
+                          const Text('+25 XP', style: TextStyle(color: Color(0xFF00F0FF), fontSize: 18, fontWeight: FontWeight.bold)),
+                        if (_winner == 'Draw')
+                          const Text('+10 XP', style: TextStyle(color: Colors.orange, fontSize: 16)),
+                      ],
                     ),
                   ),
                 Container(
@@ -124,8 +135,7 @@ class _TicTacToePageState extends State<TicTacToePage> {
                     aspectRatio: 1,
                     child: GridView.builder(
                       physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 3,
                         crossAxisSpacing: 8,
                         mainAxisSpacing: 8,
@@ -160,10 +170,8 @@ class _TicTacToePageState extends State<TicTacToePage> {
                 if (_winner != '')
                   ElevatedButton(
                     onPressed: _resetGame,
-                    style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primary),
-                    child: const Text("Play Again",
-                        style: TextStyle(color: Colors.black)),
+                    style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary),
+                    child: const Text('Play Again', style: TextStyle(color: Colors.black)),
                   ),
                 const SizedBox(height: 40),
               ],
