@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:provider/provider.dart' as provider;
 import 'package:firebase_core/firebase_core.dart';
 
 import 'core/theme/app_theme.dart';
-import 'core/theme/theme_provider.dart'; // Import ThemeProvider
+import 'core/theme/theme_provider.dart';
+import 'core/theme/language_provider.dart';
 import 'core/router/app_router.dart';
 import 'core/services/auth_service.dart';
 import 'presentation/providers/chat_provider.dart';
@@ -13,6 +15,7 @@ import 'presentation/providers/task_provider.dart';
 import 'presentation/providers/gamification_provider.dart';
 import 'presentation/providers/analytics_provider.dart';
 import 'services/focus_timer_service.dart';
+import 'services/notification_service.dart';
 
 import 'firebase_options.dart';
 
@@ -21,6 +24,9 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // Initialize notification service
+  await NotificationService().init();
 
   runApp(
     // Riverpod Scope
@@ -60,6 +66,24 @@ class StudyPlannerApp extends ConsumerWidget {
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
         themeMode: themeMode,
+        locale: ref.watch(languageProvider),
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [
+          Locale('en', 'US'),
+          Locale('hi', 'IN'),
+          Locale('es', 'ES'),
+          Locale('fr', 'FR'),
+          Locale('de', 'DE'),
+          Locale('zh', 'CN'),
+          Locale('ar', 'SA'),
+          Locale('ja', 'JP'),
+          Locale('pt', 'BR'),
+          Locale('ko', 'KR'),
+        ],
         routerConfig: router,
       ),
     );

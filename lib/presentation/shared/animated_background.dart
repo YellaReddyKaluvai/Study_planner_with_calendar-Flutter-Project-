@@ -2,19 +2,25 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:simple_animations/simple_animations.dart';
 
+/// Theme-aware animated background.
+/// Dark mode: deep space with purple nebula + stars.
+/// Light mode: clean sky with soft clouds + subtle particles.
 class AnimatedBackground extends StatelessWidget {
   const AnimatedBackground({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Stack(
       children: [
-        // Deep Space Base
-        Container(
-          color: const Color(0xFF0A0E17),
+        // ─── Base Color ────────────────────────────────────────────────────
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 500),
+          color: isDark ? const Color(0xFF0A0E17) : const Color(0xFFF0F4FF),
         ),
 
-        // Moving Gradient 1
+        // ─── Moving Gradient ───────────────────────────────────────────────
         MirrorAnimationBuilder<double>(
           tween: Tween(begin: -1.0, end: 1.0),
           duration: const Duration(seconds: 15),
@@ -24,20 +30,26 @@ class AnimatedBackground extends StatelessWidget {
                 gradient: LinearGradient(
                   begin: Alignment(value, -1),
                   end: Alignment(-value, 1),
-                  colors: [
-                    const Color(0xFF0A0E17),
-                    const Color(0xFF1A1F2E).withOpacity(0.8),
-                    const Color(0xFF0F172A),
-                  ],
+                  colors: isDark
+                      ? [
+                          const Color(0xFF0A0E17),
+                          const Color(0xFF1A1F2E).withOpacity(0.9),
+                          const Color(0xFF0F172A),
+                        ]
+                      : [
+                          const Color(0xFFF0F4FF),
+                          const Color(0xFFE8EEFF).withOpacity(0.95),
+                          const Color(0xFFF8FAFF),
+                        ],
                 ),
               ),
             );
           },
         ),
 
-        // Nebula / Plasma Effect
+        // ─── Nebula / Glow Effect ──────────────────────────────────────────
         MirrorAnimationBuilder<double>(
-          tween: Tween(begin: 0.0, end: 2 * 3.14),
+          tween: Tween(begin: 0.0, end: 2 * pi),
           duration: const Duration(seconds: 25),
           builder: (context, value, child) {
             return Transform.scale(
@@ -45,14 +57,18 @@ class AnimatedBackground extends StatelessWidget {
               child: Container(
                 decoration: BoxDecoration(
                   gradient: RadialGradient(
-                    center: Alignment(
-                        0.5 + 0.3 * cos(value), 0.3 + 0.2 * sin(value)),
+                    center:
+                        Alignment(0.5 + 0.3 * cos(value), 0.3 + 0.2 * sin(value)),
                     radius: 1.5,
-                    colors: [
-                      const Color(0xFF7B61FF)
-                          .withOpacity(0.15), // Academic Purple
-                      Colors.transparent,
-                    ],
+                    colors: isDark
+                        ? [
+                            const Color(0xFF7B61FF).withOpacity(0.15),
+                            Colors.transparent,
+                          ]
+                        : [
+                            const Color(0xFF6366F1).withOpacity(0.08),
+                            Colors.transparent,
+                          ],
                   ),
                 ),
               ),
@@ -60,9 +76,34 @@ class AnimatedBackground extends StatelessWidget {
           },
         ),
 
-        // Floating Particles (Stars/Dust)
-        const Positioned.fill(
-          child: ParticleSystem(),
+        // ─── Secondary Glow ────────────────────────────────────────────────
+        if (!isDark)
+          MirrorAnimationBuilder<double>(
+            tween: Tween(begin: 0.0, end: 2 * pi),
+            duration: const Duration(seconds: 18),
+            builder: (context, value, child) {
+              return Transform.scale(
+                scale: 1.3,
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: RadialGradient(
+                      center: Alignment(
+                          -0.4 + 0.2 * sin(value), 0.6 + 0.15 * cos(value)),
+                      radius: 1.2,
+                      colors: [
+                        const Color(0xFF14B8A6).withOpacity(0.06),
+                        Colors.transparent,
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+
+        // ─── Particles ─────────────────────────────────────────────────────
+        Positioned.fill(
+          child: ParticleSystem(isDark: isDark),
         ),
       ],
     );
@@ -70,7 +111,8 @@ class AnimatedBackground extends StatelessWidget {
 }
 
 class ParticleSystem extends StatefulWidget {
-  const ParticleSystem({super.key});
+  final bool isDark;
+  const ParticleSystem({super.key, required this.isDark});
 
   @override
   State<ParticleSystem> createState() => _ParticleSystemState();
@@ -88,8 +130,6 @@ class _ParticleSystemState extends State<ParticleSystem>
     _controller =
         AnimationController(vsync: this, duration: const Duration(seconds: 1))
           ..repeat();
-
-    // Initialize particles
     for (int i = 0; i < 30; i++) {
       _particles.add(_createParticle());
     }
@@ -99,8 +139,8 @@ class _ParticleSystemState extends State<ParticleSystem>
     return Particle(
       x: _random.nextDouble(),
       y: _random.nextDouble(),
-      size: _random.nextDouble() * 2 + 1,
-      speed: _random.nextDouble() * 0.05 + 0.01,
+      size: _random.nextDouble() * 2 + 0.5,
+      speed: _random.nextDouble() * 0.04 + 0.008,
       opacity: _random.nextDouble() * 0.5 + 0.1,
     );
   }
@@ -116,15 +156,15 @@ class _ParticleSystemState extends State<ParticleSystem>
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
-        for (var particle in _particles) {
-          particle.y -= particle.speed * 0.2; // Move up (Increased speed)
-          if (particle.y < 0) {
-            particle.y = 1.0;
-            particle.x = _random.nextDouble();
+        for (var p in _particles) {
+          p.y -= p.speed * 0.18;
+          if (p.y < 0) {
+            p.y = 1.0;
+            p.x = _random.nextDouble();
           }
         }
         return CustomPaint(
-          painter: ParticlePainter(_particles),
+          painter: ParticlePainter(_particles, isDark: widget.isDark),
         );
       },
     );
@@ -137,30 +177,30 @@ class Particle {
   double size;
   double speed;
   double opacity;
-
-  Particle({
-    required this.x,
-    required this.y,
-    required this.size,
-    required this.speed,
-    required this.opacity,
-  });
+  Particle(
+      {required this.x,
+      required this.y,
+      required this.size,
+      required this.speed,
+      required this.opacity});
 }
 
 class ParticlePainter extends CustomPainter {
   final List<Particle> particles;
-
-  ParticlePainter(this.particles);
+  final bool isDark;
+  ParticlePainter(this.particles, {required this.isDark});
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = Colors.white;
-
-    for (var particle in particles) {
-      paint.color = Colors.white.withOpacity(particle.opacity);
+    final paint = Paint();
+    for (var p in particles) {
+      // In light mode, use soft indigo dots; in dark mode use white stars
+      paint.color = isDark
+          ? Colors.white.withOpacity(p.opacity)
+          : const Color(0xFF6366F1).withOpacity(p.opacity * 0.4);
       canvas.drawCircle(
-        Offset(particle.x * size.width, particle.y * size.height),
-        particle.size,
+        Offset(p.x * size.width, p.y * size.height),
+        p.size,
         paint,
       );
     }
