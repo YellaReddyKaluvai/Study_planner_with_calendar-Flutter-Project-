@@ -5,6 +5,7 @@ import 'package:fl_chart/fl_chart.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../shared/glass_container.dart';
 import '../../../presentation/providers/analytics_provider.dart';
+import '../../../core/theme/app_strings.dart';
 
 class AnalyticsDashboard extends StatelessWidget {
   const AnalyticsDashboard({super.key});
@@ -32,22 +33,22 @@ class AnalyticsDashboard extends StatelessWidget {
         return Column(
           children: [
             // Weekly Progress Chart
-            _buildWeeklyChart(analyticsProvider, isDark, textColor),
+            _buildWeeklyChart(context, analyticsProvider, isDark, textColor),
             const SizedBox(height: 24),
 
             // Stats Grid
-            _buildStatsGrid(analyticsProvider),
+            _buildStatsGrid(context, analyticsProvider),
             const SizedBox(height: 24),
 
             // Subject Performance
-            _buildSubjectPerformance(analyticsProvider, isDark, textColor),
+            _buildSubjectPerformance(context, analyticsProvider, isDark, textColor),
           ],
         );
       },
     );
   }
 
-  Widget _buildWeeklyChart(AnalyticsProvider provider, bool isDark, Color textColor) {
+  Widget _buildWeeklyChart(BuildContext context, AnalyticsProvider provider, bool isDark, Color textColor) {
     return GlassContainer(
       height: 280,
       width: double.infinity,
@@ -59,7 +60,7 @@ class AnalyticsDashboard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "Weekly Progress",
+                AppStrings.of(context).weeklyProgress,
                 style: GoogleFonts.outfit(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
@@ -72,7 +73,7 @@ class AnalyticsDashboard extends StatelessWidget {
           const SizedBox(height: 16),
           Expanded(
             child: provider.weeklyData.isEmpty
-                ? _buildEmptyState(isDark)
+                ? _buildEmptyState(context, isDark)
                 : _buildBarChart(provider.weeklyData, isDark),
           ),
         ],
@@ -154,12 +155,12 @@ class AnalyticsDashboard extends StatelessWidget {
     );
   }
 
-  Widget _buildStatsGrid(AnalyticsProvider provider) {
+  Widget _buildStatsGrid(BuildContext context, AnalyticsProvider provider) {
     return Row(
       children: [
         Expanded(
           child: _StatTile(
-            title: 'Total Time',
+            title: AppStrings.of(context).totalTime,
             value: provider.getFormattedTotalTime(),
             icon: Icons.timer,
             color: AppTheme.primary,
@@ -168,7 +169,7 @@ class AnalyticsDashboard extends StatelessWidget {
         const SizedBox(width: 12),
         Expanded(
           child: _StatTile(
-            title: 'Avg Session',
+            title: AppStrings.of(context).avgSession,
             value: provider.getFormattedAverageTime(),
             icon: Icons.trending_up,
             color: const Color(0xFFFFA500),
@@ -177,8 +178,8 @@ class AnalyticsDashboard extends StatelessWidget {
         const SizedBox(width: 12),
         Expanded(
           child: _StatTile(
-            title: 'Current Streak',
-            value: '${provider.currentStreak}d',
+            title: AppStrings.of(context).currentStreak,
+            value: '${provider.currentStreak} ${AppStrings.of(context).days.substring(0, 1)}',
             icon: Icons.local_fire_department,
             color: const Color(0xFFFF6B6B),
           ),
@@ -187,7 +188,7 @@ class AnalyticsDashboard extends StatelessWidget {
     );
   }
 
-  Widget _buildSubjectPerformance(AnalyticsProvider provider, bool isDark, Color textColor) {
+  Widget _buildSubjectPerformance(BuildContext context, AnalyticsProvider provider, bool isDark, Color textColor) {
     if (provider.subjectData.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -274,7 +275,7 @@ class AnalyticsDashboard extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyState(bool isDark) {
+  Widget _buildEmptyState(BuildContext context, bool isDark) {
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,

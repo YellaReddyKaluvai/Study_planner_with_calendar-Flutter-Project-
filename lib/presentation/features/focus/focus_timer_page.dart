@@ -60,13 +60,7 @@ class _FocusTimerPageState extends State<FocusTimerPage>
             ),
           ),
           body: Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Color(0xFF0A0E17), Color(0xFF161B28)],
-              ),
-            ),
+            color: Theme.of(context).scaffoldBackgroundColor,
             child: SafeArea(
               child: SingleChildScrollView(
                 padding:
@@ -94,28 +88,29 @@ class _FocusTimerPageState extends State<FocusTimerPage>
   }
 
   Widget _buildTimerDisplay(FocusTimerService timerService) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final accent = const Color(0xFF00F0FF);
+    final labelColor = isDark ? Colors.white70 : const Color(0xFF64748B);
     return Container(
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: timerService.isRunning
-              ? [
-                  const Color(0xFF00F0FF).withOpacity(0.2),
-                  const Color(0xFF00D4FF).withOpacity(0.1)
-                ]
+              ? [accent.withOpacity(0.12), accent.withOpacity(0.05)]
               : [Colors.transparent, Colors.transparent],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         border: Border.all(
-          color: const Color(0xFF00F0FF).withOpacity(0.3),
+          color: accent.withOpacity(isDark ? 0.3 : 0.2),
           width: 2,
         ),
+        color: isDark ? null : Colors.white.withOpacity(0.8),
         borderRadius: BorderRadius.circular(32),
         boxShadow: timerService.isRunning
             ? [
                 BoxShadow(
-                  color: const Color(0xFF00F0FF).withOpacity(0.3),
+                  color: accent.withOpacity(0.2),
                   blurRadius: 20,
                   spreadRadius: 2,
                 )
@@ -128,7 +123,7 @@ class _FocusTimerPageState extends State<FocusTimerPage>
             'Time Remaining',
             style: GoogleFonts.outfit(
               fontSize: 14,
-              color: Colors.white70,
+              color: labelColor,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -138,7 +133,7 @@ class _FocusTimerPageState extends State<FocusTimerPage>
             style: GoogleFonts.outfit(
               fontSize: 72,
               fontWeight: FontWeight.bold,
-              color: const Color(0xFF00F0FF),
+              color: accent,
               letterSpacing: 2,
             ),
           ).animate(onPlay: (controller) => _pulseController.repeat()).scale(
@@ -153,6 +148,9 @@ class _FocusTimerPageState extends State<FocusTimerPage>
   }
 
   Widget _buildProgressRing(FocusTimerService timerService) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : const Color(0xFF1E293B);
+    final labelColor = isDark ? Colors.white70 : const Color(0xFF64748B);
     return Stack(
       alignment: Alignment.center,
       children: [
@@ -162,7 +160,7 @@ class _FocusTimerPageState extends State<FocusTimerPage>
           child: CircularProgressIndicator(
             value: timerService.progress,
             strokeWidth: 8,
-            backgroundColor: Colors.white10,
+            backgroundColor: isDark ? Colors.white10 : Colors.black12,
             valueColor: AlwaysStoppedAnimation<Color>(
               timerService.isRunning
                   ? const Color(0xFF00F0FF)
@@ -178,12 +176,13 @@ class _FocusTimerPageState extends State<FocusTimerPage>
               style: GoogleFonts.outfit(
                 fontSize: 32,
                 fontWeight: FontWeight.bold,
+                color: textColor,
               ),
             ),
             const SizedBox(height: 4),
             Text(
               'Complete',
-              style: GoogleFonts.outfit(fontSize: 12, color: Colors.white70),
+              style: GoogleFonts.outfit(fontSize: 12, color: labelColor),
             ),
           ],
         ),
@@ -264,6 +263,10 @@ class _FocusTimerPageState extends State<FocusTimerPage>
   }
 
   Widget _buildPresets(FocusTimerService timerService) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final labelColor = isDark ? Colors.white70 : const Color(0xFF64748B);
+    final chipBg = isDark ? Colors.white.withOpacity(0.07) : Colors.black.withOpacity(0.05);
+    final chipBorder = isDark ? Colors.white12 : Colors.black12;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -271,7 +274,7 @@ class _FocusTimerPageState extends State<FocusTimerPage>
           'Quick Presets',
           style: GoogleFonts.outfit(
             fontSize: 14,
-            color: Colors.white70,
+            color: labelColor,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -280,7 +283,6 @@ class _FocusTimerPageState extends State<FocusTimerPage>
           spacing: 8,
           runSpacing: 8,
           children: [
-            // Existing preset chips (with active highlight)
             ...TimerPreset.presets.map((preset) {
               final isActive = !timerService.isRunning &&
                   timerService.sessionDuration == preset.seconds;
@@ -293,12 +295,12 @@ class _FocusTimerPageState extends State<FocusTimerPage>
                   decoration: BoxDecoration(
                     color: isActive
                         ? const Color(0xFF00F0FF).withOpacity(0.15)
-                        : Colors.white.withOpacity(0.07),
+                        : chipBg,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: isActive
                           ? const Color(0xFF00F0FF).withOpacity(0.6)
-                          : Colors.white12,
+                          : chipBorder,
                     ),
                   ),
                   child: Row(
@@ -313,7 +315,7 @@ class _FocusTimerPageState extends State<FocusTimerPage>
                           fontWeight: FontWeight.w500,
                           color: isActive
                               ? const Color(0xFF00F0FF)
-                              : Colors.white70,
+                              : labelColor,
                         ),
                       ),
                     ],
@@ -321,8 +323,6 @@ class _FocusTimerPageState extends State<FocusTimerPage>
                 ),
               );
             }),
-
-            // ⏱️ Custom Duration chip
             GestureDetector(
               onTap: () => _showCustomDurationDialog(timerService),
               child: Container(
@@ -524,6 +524,9 @@ class _FocusTimerPageState extends State<FocusTimerPage>
   }
 
   Widget _buildSessionInfo(FocusTimerService timerService) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : const Color(0xFF1E293B);
+    final labelColor = isDark ? Colors.white70 : const Color(0xFF64748B);
     return GlassContainer(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -535,12 +538,11 @@ class _FocusTimerPageState extends State<FocusTimerPage>
               Text(
                 'Session Details',
                 style: GoogleFonts.outfit(
-                    fontSize: 14, fontWeight: FontWeight.w600),
+                    fontSize: 14, fontWeight: FontWeight.w600, color: textColor),
               ),
               Text(
                 '${widget.subject} • ${(timerService.sessionDuration / 60).toStringAsFixed(0)}m',
-                style:
-                    GoogleFonts.outfit(fontSize: 12, color: Colors.white70),
+                style: GoogleFonts.outfit(fontSize: 12, color: labelColor),
               ),
             ],
           ),
@@ -550,26 +552,26 @@ class _FocusTimerPageState extends State<FocusTimerPage>
             children: [
               Text('Status',
                   style: GoogleFonts.outfit(
-                      fontSize: 12, color: Colors.white70)),
+                      fontSize: 12, color: labelColor)),
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: timerService.isRunning
                       ? const Color(0xFF00FF88).withOpacity(0.2)
-                      : Colors.white10,
+                      : (isDark ? Colors.white10 : Colors.black.withOpacity(0.05)),
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(
                     color: timerService.isRunning
                         ? const Color(0xFF00FF88)
-                        : Colors.white10,
+                        : (isDark ? Colors.white10 : Colors.black12),
                     width: 1,
                   ),
                 ),
                 child: Text(
                   timerService.isRunning ? '🟢 Active' : '⏸️ Paused',
                   style: GoogleFonts.outfit(
-                      fontSize: 12, fontWeight: FontWeight.w500),
+                      fontSize: 12, fontWeight: FontWeight.w500, color: textColor),
                 ),
               ),
             ],

@@ -26,7 +26,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -36,9 +36,34 @@ class DatabaseHelper {
     if (oldVersion < 2) {
       final columns = await db.rawQuery('PRAGMA table_info(tasks)');
       final columnNames = columns.map((c) => c['name'] as String).toList();
-      
       if (!columnNames.contains('priority')) {
         await db.execute('ALTER TABLE tasks ADD COLUMN priority INTEGER DEFAULT 2');
+      }
+    }
+    if (oldVersion < 3) {
+      // preparationPlan was NOT NULL but should be nullable
+      // SQLite doesn't support DROP COLUMN in old versions, so we recreate
+      try {
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS tasks_new (
+            id TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            description TEXT NOT NULL,
+            startTime TEXT NOT NULL,
+            endTime TEXT NOT NULL,
+            color INTEGER NOT NULL,
+            type TEXT NOT NULL,
+            isCompleted INTEGER NOT NULL,
+            priority INTEGER NOT NULL DEFAULT 2,
+            hasAiPlan INTEGER NOT NULL DEFAULT 0,
+            preparationPlan TEXT
+          )
+        ''');
+        await db.execute('INSERT OR IGNORE INTO tasks_new SELECT * FROM tasks');
+        await db.execute('DROP TABLE tasks');
+        await db.execute('ALTER TABLE tasks_new RENAME TO tasks');
+      } catch (_) {
+        // If already correct schema, ignore
       }
     }
   }
@@ -49,7 +74,7 @@ class DatabaseHelper {
     const boolType = 'INTEGER NOT NULL';
     const integerType = 'INTEGER NOT NULL';
 
-    // Tasks Table
+    // Tasks Table - preparationPlan is nullable (AI plan generated async)
     await db.execute('''
 CREATE TABLE tasks (
   id $idType,
@@ -62,7 +87,7 @@ CREATE TABLE tasks (
   isCompleted $boolType,
   priority $integerType,
   hasAiPlan $boolType,
-  preparationPlan $textType
+  preparationPlan TEXT
 )
 ''');
 

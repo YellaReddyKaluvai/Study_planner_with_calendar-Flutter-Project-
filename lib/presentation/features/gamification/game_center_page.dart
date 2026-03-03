@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../providers/gamification_provider.dart';
 import '../../shared/glass_container.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/app_strings.dart';
 import 'games/tic_tac_toe/tic_tac_toe_page.dart';
 import 'games/2048/game_2048_page.dart';
 import 'games/sudoku/sudoku_page.dart';
@@ -138,8 +139,8 @@ class _GameCenterPageState extends State<GameCenterPage> {
             const Text('🎉', style: TextStyle(fontSize: 56)),
             const SizedBox(height: 12),
             Text(
-              'Level Up!',
-              style: TextStyle(
+              AppStrings.of(context).levelUp,
+              style: const TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
                 color: AppTheme.primary,
@@ -147,7 +148,7 @@ class _GameCenterPageState extends State<GameCenterPage> {
             ),
             const SizedBox(height: 8),
             Text(
-              'You reached Level $newLevel',
+              '${AppStrings.of(context).youReachedLevel} $newLevel',
               style: const TextStyle(color: Colors.white70, fontSize: 16),
             ),
           ],
@@ -161,8 +162,8 @@ class _GameCenterPageState extends State<GameCenterPage> {
                   borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: () => Navigator.pop(context),
-            child: const Text('Awesome!',
-                style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+            child: Text(AppStrings.of(context).awesome,
+                style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -171,6 +172,11 @@ class _GameCenterPageState extends State<GameCenterPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subtextColor = isDark ? Colors.white70 : Colors.black54;
+    final fadedColor = isDark ? Colors.white38 : Colors.black38;
+
     return Scaffold(
       body: Container(
         color: Colors.transparent,
@@ -185,12 +191,12 @@ class _GameCenterPageState extends State<GameCenterPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Game Center',
+                        Text(
+                          AppStrings.of(context).gameCenter,
                           style: TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                            color: textColor,
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -207,7 +213,7 @@ class _GameCenterPageState extends State<GameCenterPage> {
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
-                                'Level ${gp.currentLevel}',
+                                '${AppStrings.of(context).level} ${gp.currentLevel}',
                                 style: const TextStyle(
                                   color: Colors.black,
                                   fontWeight: FontWeight.bold,
@@ -218,15 +224,15 @@ class _GameCenterPageState extends State<GameCenterPage> {
                             const SizedBox(width: 12),
                             Text(
                               gp.xpLabel,
-                              style: const TextStyle(
-                                  color: Colors.white70,
+                              style: TextStyle(
+                                  color: subtextColor,
                                   fontWeight: FontWeight.w500),
                             ),
                             const Spacer(),
                             Text(
-                              '${gp.totalXP} total XP',
-                              style: const TextStyle(
-                                  color: Colors.white38, fontSize: 11),
+                              '${gp.totalXP} ${AppStrings.of(context).totalXp}',
+                              style: TextStyle(
+                                  color: fadedColor, fontSize: 11),
                             ),
                           ],
                         ),
@@ -236,7 +242,7 @@ class _GameCenterPageState extends State<GameCenterPage> {
                           borderRadius: BorderRadius.circular(4),
                           child: LinearProgressIndicator(
                             value: gp.levelProgress,
-                            backgroundColor: Colors.white10,
+                            backgroundColor: isDark ? Colors.white10 : Colors.black12,
                             valueColor: AlwaysStoppedAnimation<Color>(
                                 AppTheme.secondary),
                             minHeight: 7,
@@ -244,9 +250,9 @@ class _GameCenterPageState extends State<GameCenterPage> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '${(gp.levelProgress * 100).toInt()}% to Level ${gp.currentLevel + 1}  •  need ${gp.xpForNextLevel - gp.xpInCurrentLevel} more XP',
-                          style: const TextStyle(
-                              color: Colors.white38, fontSize: 10),
+                          '${(gp.levelProgress * 100).toInt()}% ${AppStrings.of(context).toLevel} ${gp.currentLevel + 1}  •  ${AppStrings.of(context).need} ${gp.xpForNextLevel - gp.xpInCurrentLevel} ${AppStrings.of(context).moreXp}',
+                          style: TextStyle(
+                              color: fadedColor, fontSize: 10),
                         ),
                       ],
                     ),
@@ -285,8 +291,8 @@ class _GameCenterPageState extends State<GameCenterPage> {
                             const SizedBox(height: 10),
                             Text(
                               game.name,
-                              style: const TextStyle(
-                                color: Colors.white,
+                              style: TextStyle(
+                                color: textColor,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 15,
                               ),
@@ -295,7 +301,7 @@ class _GameCenterPageState extends State<GameCenterPage> {
                             Text(
                               '+${game.baseXP} XP',
                               style: TextStyle(
-                                color: game.color.withOpacity(0.8),
+                                color: isDark ? game.color.withOpacity(0.8) : game.color,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
                               ),

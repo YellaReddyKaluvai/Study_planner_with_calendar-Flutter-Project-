@@ -15,11 +15,20 @@ import '../../features/focus/focus_timer_page.dart';
 import '../../features/analytics/analytics_dashboard.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/app_strings.dart';
 import '../../../features/profile/presentation/profile_page.dart';
 
 // Move the Dashboard content here
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
+
+  String _greeting(BuildContext context) {
+    final hour = DateTime.now().hour;
+    final s = AppStrings.of(context);
+    if (hour < 12) return s.goodMorning;
+    if (hour < 17) return s.goodAfternoon;
+    return s.goodEvening;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,7 +63,7 @@ class DashboardPage extends StatelessWidget {
                       Row(
                         children: [
                           Text(
-                            "Welcome back",
+                            _greeting(context),
                             style: GoogleFonts.outfit(
                               fontSize: 16,
                               color: subtextColor,
@@ -67,7 +76,7 @@ class DashboardPage extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        "Ready to focus?",
+                        AppStrings.of(context).todaysTasks,
                         style: GoogleFonts.outfit(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
@@ -135,7 +144,7 @@ class DashboardPage extends StatelessWidget {
               ).animate().fade(duration: 600.ms).slideX(begin: -0.2, end: 0),
               const SizedBox(height: 32),
 
-              Text("Quick Stats",
+              Text(AppStrings.of(context).quickStats,
                   style: GoogleFonts.outfit(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
@@ -147,7 +156,7 @@ class DashboardPage extends StatelessWidget {
                 children: [
                   Expanded(
                     child: _StatCard(
-                      title: "Tasks Done",
+                      title: AppStrings.of(context).tasksDone,
                       value: "$completedTasks",
                       icon: Icons.check_circle_outline,
                       color: AppTheme.success,
@@ -156,7 +165,7 @@ class DashboardPage extends StatelessWidget {
                   const SizedBox(width: 16),
                   Expanded(
                     child: _StatCard(
-                      title: "Total Tasks",
+                      title: AppStrings.of(context).totalTasks,
                       value: "$totalTasks",
                       icon: Icons.assignment,
                       color: AppTheme.primary,
@@ -172,23 +181,23 @@ class DashboardPage extends StatelessWidget {
                 children: [
                   Expanded(
                     child: _StatCard(
-                      title: "Focus Time",
+                      title: AppStrings.of(context).focusTime,
                       value: focusMins == 0 ? '—' : focusLabel,
                       icon: Icons.timer_outlined,
                       color: const Color(0xFF00F0FF),
-                      subtitle: 'total logged',
+                      subtitle: AppStrings.of(context).totalLogged,
                     ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: _StatCard(
-                      title: "Avg Session",
+                      title: AppStrings.of(context).avgSession,
                       value: analyticsProvider.averageSessionTime == 0
                           ? '—'
                           : '${analyticsProvider.averageSessionTime.toInt()}m',
                       icon: Icons.trending_up,
                       color: const Color(0xFFFFA500),
-                      subtitle: 'per session',
+                      subtitle: AppStrings.of(context).perSession,
                     ),
                   ),
                 ],

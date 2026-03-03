@@ -5,6 +5,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../providers/task_provider.dart';
 import '../../../shared/glass_container.dart';
 import '../../../../domain/entities/task.dart';
+import '../qr_scan_page.dart';
 
 class TaskCreationSheet extends StatefulWidget {
   /// Pass an existing task to open the sheet in edit mode.
@@ -24,6 +25,8 @@ class _TaskCreationSheetState extends State<TaskCreationSheet> {
   late Color _selectedColor;
   late int _selectedPriority;
   late String _selectedCategory;
+  String? _titleError;
+  String? _timeError;
 
   bool get _isEditing => widget.task != null;
 
@@ -79,13 +82,30 @@ class _TaskCreationSheetState extends State<TaskCreationSheet> {
               ),
             ),
             const SizedBox(height: 24),
-            Text(
-              _isEditing ? "Edit Task" : "New Task",
-              style: GoogleFonts.inter(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
+            // Header Row with QR button
+            Row(
+              children: [
+                Text(
+                  _isEditing ? "Edit Task" : "New Task",
+                  style: GoogleFonts.inter(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const Spacer(),
+                if (!_isEditing)
+                  TextButton.icon(
+                    onPressed: _openQrScan,
+                    icon: const Icon(Icons.qr_code_scanner,
+                        color: AppTheme.primary, size: 18),
+                    label: const Text('Import QR',
+                        style: TextStyle(color: AppTheme.primary, fontSize: 12)),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: 16),
 
@@ -94,10 +114,15 @@ class _TaskCreationSheetState extends State<TaskCreationSheet> {
               controller: _titleController,
               autofocus: !_isEditing,
               style: const TextStyle(color: Colors.white, fontSize: 18),
-              decoration: const InputDecoration(
+              onChanged: (_) {
+                if (_titleError != null) setState(() => _titleError = null);
+              },
+              decoration: InputDecoration(
                 hintText: "What do you need to do?",
-                hintStyle: TextStyle(color: Colors.white38),
+                hintStyle: const TextStyle(color: Colors.white38),
                 border: InputBorder.none,
+                errorText: _titleError,
+                errorStyle: const TextStyle(color: Colors.redAccent, fontSize: 11),
               ),
             ),
 
@@ -307,14 +332,35 @@ class _TaskCreationSheetState extends State<TaskCreationSheet> {
   }
 
   void _submit() {
-    if (_titleController.text.isEmpty) return;
+    // Validate
+    setState(() {
+      _titleError = _titleController.text.trim().isEmpty
+          ? 'Please enter a task title'
+          : null;
+      _timeError = _endTime.isBefore(_startTime) || _endTime == _startTime
+          ? 'End time must be after start time'
+          : null;
+    });
+
+    if (_titleError != null || _timeError != null) {
+      if (_timeError != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_timeError!),
+            backgroundColor: Colors.redAccent,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+      return;
+    }
 
     final provider = Provider.of<TaskProvider>(context, listen: false);
 
     if (_isEditing) {
       final updated = widget.task!.copyWith(
-        title: _titleController.text,
-        description: _notesController.text,
+        title: _titleController.text.trim(),
+        description: _notesController.text.trim(),
         startTime: _startTime,
         endTime: _endTime,
         color: _selectedColor,
@@ -324,8 +370,8 @@ class _TaskCreationSheetState extends State<TaskCreationSheet> {
       provider.updateTask(updated);
     } else {
       provider.addTask(
-        title: _titleController.text,
-        description: _notesController.text,
+        title: _titleController.text.trim(),
+        description: _notesController.text.trim(),
         startTime: _startTime,
         endTime: _endTime,
         color: _selectedColor,
@@ -334,6 +380,34 @@ class _TaskCreationSheetState extends State<TaskCreationSheet> {
       );
     }
     Navigator.pop(context);
+  }
+
+  Future<void> _openQrScan() async {
+    Navigator.pop(context); // close this sheet first
+    final scannedTask = await Navigator.push<Task?>(
+      context,
+      MaterialPageRoute(builder: (_) => const QrScanPage()),
+    );
+    if (scannedTask != null && context.mounted) {
+      final provider = Provider.of<TaskProvider>(context, listen: false);
+      provider.addTask(
+        title: scannedTask.title,
+        description: scannedTask.description,
+        startTime: scannedTask.startTime,
+        endTime: scannedTask.endTime,
+        color: scannedTask.color,
+        priority: scannedTask.priority,
+        type: scannedTask.type,
+      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Task imported from QR ✓'),
+            backgroundColor: Color(0xFF4CAF50),
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _pickDateTime(bool isStart) async {
