@@ -13,17 +13,24 @@ class MemoryGamePage extends StatefulWidget {
 
 class _MemoryGamePageState extends State<MemoryGamePage> {
   final List<IconData> _icons = [
-    Icons.science, Icons.menu_book, Icons.calculate,
-    Icons.computer, Icons.language, Icons.brush,
-    Icons.science, Icons.menu_book, Icons.calculate,
-    Icons.computer, Icons.language, Icons.brush,
+    Icons.science,
+    Icons.menu_book,
+    Icons.calculate,
+    Icons.computer,
+    Icons.language,
+    Icons.brush,
+    Icons.science,
+    Icons.menu_book,
+    Icons.calculate,
+    Icons.computer,
+    Icons.language,
+    Icons.brush,
   ];
 
   List<bool> _flipped = [];
   List<bool> _matched = [];
   int _prevIndex = -1;
   bool _lockBoard = false;
-  int _score = 0;
   int _tries = 0;
   bool _xpAwarded = false;
 
@@ -39,7 +46,6 @@ class _MemoryGamePageState extends State<MemoryGamePage> {
     _matched = List.generate(12, (_) => false);
     _prevIndex = -1;
     _lockBoard = false;
-    _score = 0;
     _tries = 0;
     _xpAwarded = false;
     setState(() {});
@@ -59,7 +65,6 @@ class _MemoryGamePageState extends State<MemoryGamePage> {
         setState(() {
           _matched[index] = true;
           _matched[_prevIndex] = true;
-          _score += 100;
           _lockBoard = false;
           _prevIndex = -1;
         });
@@ -94,7 +99,8 @@ class _MemoryGamePageState extends State<MemoryGamePage> {
       barrierDismissible: false,
       builder: (_) => AlertDialog(
         backgroundColor: const Color(0xFF1E2746),
-        title: const Text('Memory Master! 🧠', style: TextStyle(color: Colors.white)),
+        title: const Text('Memory Master! 🧠',
+            style: TextStyle(color: Colors.white)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -107,7 +113,8 @@ class _MemoryGamePageState extends State<MemoryGamePage> {
                     fontWeight: FontWeight.bold,
                     fontSize: 16)),
             if (bonus > 0)
-              Text('(+$bonus bonus for ${_tries <= 10 ? "excellent" : "good"} performance!)',
+              Text(
+                  '(+$bonus bonus for ${_tries <= 10 ? "excellent" : "good"} performance!)',
                   style: const TextStyle(color: Colors.white38, fontSize: 11)),
           ],
         ),

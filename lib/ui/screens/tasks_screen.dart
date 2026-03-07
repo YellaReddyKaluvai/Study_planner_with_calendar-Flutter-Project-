@@ -5,6 +5,7 @@ import '../../providers/planner_provider.dart';
 import '../../models/study_task.dart';
 import '../widgets/neon_button.dart';
 import '../widgets/task_tile.dart';
+import '../widgets/success_dialog.dart';
 
 class TasksScreen extends StatelessWidget {
   const TasksScreen({super.key});
@@ -53,7 +54,6 @@ class TasksScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-
                         Center(
                           child: Container(
                             width: 40,
@@ -65,7 +65,6 @@ class TasksScreen extends StatelessWidget {
                             ),
                           ),
                         ),
-
                         const Text(
                           'Add Study Task',
                           style: TextStyle(
@@ -73,27 +72,21 @@ class TasksScreen extends StatelessWidget {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-
                         const SizedBox(height: 12),
-
                         TextField(
                           controller: titleCtrl,
                           decoration: const InputDecoration(
                             labelText: 'Title',
                           ),
                         ),
-
                         const SizedBox(height: 12),
-
                         TextField(
                           controller: subjectCtrl,
                           decoration: const InputDecoration(
                             labelText: 'Subject',
                           ),
                         ),
-
                         const SizedBox(height: 12),
-
                         Row(
                           children: [
                             Expanded(
@@ -121,13 +114,11 @@ class TasksScreen extends StatelessWidget {
                                 ),
                               ),
                             ),
-
                             Expanded(
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
                                   const Text('Minutes: '),
-
                                   DropdownButton<int>(
                                     dropdownColor: const Color(0xFF050816),
                                     value: minutes,
@@ -148,14 +139,11 @@ class TasksScreen extends StatelessWidget {
                             ),
                           ],
                         ),
-
                         const SizedBox(height: 12),
-
                         Row(
                           children: [
                             const Text('Difficulty: '),
                             const SizedBox(width: 12),
-
                             ChoiceChip(
                               label: const Text('Easy'),
                               selected: difficulty == TaskDifficulty.easy,
@@ -163,9 +151,7 @@ class TasksScreen extends StatelessWidget {
                                 difficulty = TaskDifficulty.easy;
                               }),
                             ),
-
                             const SizedBox(width: 8),
-
                             ChoiceChip(
                               label: const Text('Medium'),
                               selected: difficulty == TaskDifficulty.medium,
@@ -173,9 +159,7 @@ class TasksScreen extends StatelessWidget {
                                 difficulty = TaskDifficulty.medium;
                               }),
                             ),
-
                             const SizedBox(width: 8),
-
                             ChoiceChip(
                               label: const Text('Hard'),
                               selected: difficulty == TaskDifficulty.hard,
@@ -185,9 +169,7 @@ class TasksScreen extends StatelessWidget {
                             ),
                           ],
                         ),
-
                         const SizedBox(height: 24),
-
                         Align(
                           alignment: Alignment.centerRight,
                           child: NeonButton(
@@ -207,11 +189,10 @@ class TasksScreen extends StatelessWidget {
                                 return;
                               }
 
-                              final provider =
-                                  Provider.of<PlannerProvider>(
-                                    context,
-                                    listen: false,
-                                  );
+                              final provider = Provider.of<PlannerProvider>(
+                                context,
+                                listen: false,
+                              );
 
                               provider.addTask(
                                 title: titleCtrl.text.trim(),
@@ -222,10 +203,15 @@ class TasksScreen extends StatelessWidget {
                               );
 
                               Navigator.pop(context);
+
+                              // Show success animation
+                              SuccessDialog.show(
+                                context: context,
+                                message: 'Task Added Successfully! 🎉',
+                              );
                             },
                           ),
                         ),
-
                         const SizedBox(height: 20),
                       ],
                     ),
@@ -257,9 +243,7 @@ class TasksScreen extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-
                 const Spacer(),
-
                 IconButton(
                   icon: const Icon(Icons.auto_awesome_rounded),
                   onPressed: () async {
@@ -267,22 +251,18 @@ class TasksScreen extends StatelessWidget {
 
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content:
-                            Text("AI generated a smarter schedule!"),
+                        content: Text("AI generated a smarter schedule!"),
                       ),
                     );
                   },
                 ),
-
                 IconButton(
                   icon: const Icon(Icons.add_rounded),
                   onPressed: () => _showAddTaskDialog(context),
                 )
               ],
             ),
-
             const SizedBox(height: 8),
-
             Expanded(
               child: provider.isLoading
                   ? const Center(
@@ -301,8 +281,7 @@ class TasksScreen extends StatelessWidget {
                               task: task,
                               onToggle: () =>
                                   provider.toggleTaskCompletion(task),
-                              onDelete: () =>
-                                  provider.deleteTask(task),
+                              onDelete: () => provider.deleteTask(task),
                             );
                           },
                         ),

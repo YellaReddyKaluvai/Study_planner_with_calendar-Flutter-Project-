@@ -1,0 +1,34 @@
+Analyzing Study_planner_with_calendar-Flutter-Project-...       
+
+warning - The value of the field '_teamsPurpleDark' isn't used - lib\presentation\features\calendar\calendar_page.dart:57:22 - unused_field
+warning - The value of the field '_teamsHover' isn't used - lib\presentation\features\calendar\calendar_page.dart:58:22 - unused_field
+  error - The method 'segoeUi' isn't defined for the type 'GoogleFonts' - lib\presentation\features\calendar\calendar_page.dart:124:51 - undefined_method
+  error - The method 'segoeUi' isn't defined for the type 'GoogleFonts' - lib\presentation\features\calendar\calendar_page.dart:138:51 - undefined_method
+  error - The method 'segoeUi' isn't defined for the type 'GoogleFonts' - lib\presentation\features\calendar\calendar_page.dart:144:52 - undefined_method
+  error - The method 'segoeUi' isn't defined for the type 'GoogleFonts' - lib\presentation\features\calendar\calendar_page.dart:155:52 - undefined_method
+  error - The named parameter 'currentTimeIndicatorColor' isn't defined - lib\presentation\features\calendar\calendar_page.dart:163:25 - undefined_named_parameter
+  error - The method 'segoeUi' isn't defined for the type 'GoogleFonts' - lib\presentation\features\calendar\calendar_page.dart:171:61 - undefined_method
+  error - The method 'segoeUi' isn't defined for the type 'GoogleFonts' - lib\presentation\features\calendar\calendar_page.dart:176:54 - undefined_method
+  error - The method 'segoeUi' isn't defined for the type 'GoogleFonts' - lib\presentation\features\calendar\calendar_page.dart:181:53 - undefined_method
+  error - The method 'segoeUi' isn't defined for the type 'GoogleFonts' - lib\presentation\features\calendar\calendar_page.dart:189:50 - undefined_method
+  error - The method 'segoeUi' isn't defined for the type 'GoogleFonts' - lib\presentation\features\calendar\calendar_page.dart:194:63 - undefined_method
+  error - The method 'segoeUi' isn't defined for the type 'GoogleFonts' - lib\presentation\features\calendar\calendar_page.dart:200:62 - undefined_method
+  error - The method 'segoeUi' isn't defined for the type 'GoogleFonts' - lib\presentation\features\calendar\calendar_page.dart:213:55 - undefined_method
+  error - The method 'segoeUi' isn't defined for the type 'GoogleFonts' - lib\presentation\features\calendar\calendar_page.dart:221:54 - undefined_method
+  error - The method 'segoeUi' isn't defined for the type 'GoogleFonts' - lib\presentation\features\calendar\calendar_page.dart:228:53 - undefined_method
+  error - The method 'segoeUi' isn't defined for the type 'GoogleFonts' - lib\presentation\features\calendar\calendar_page.dart:233:54 - undefined_method
+  error - The method 'segoeUi' isn't defined for the type 'GoogleFonts' - lib\presentation\features\calendar\calendar_page.dart:339:38 - undefined_method
+  error - The method 'segoeUi' isn't defined for the type 'GoogleFonts' - lib\presentation\features\calendar\calendar_page.dart:349:38 - undefined_method
+  error - The method 'segoeUi' isn't defined for the type 'GoogleFonts' - lib\presentation\features\calendar\calendar_page.dart:401:32 - undefined_method
+  error - The method 'segoeUi' isn't defined for the type 'GoogleFonts' - lib\presentation\features\calendar\calendar_page.dart:505:44 - undefined_method
+  error - The method 'segoeUi' isn't defined for the type 'GoogleFonts' - lib\presentation\features\calendar\calendar_page.dart:572:34 - undefined_method
+  error - The method 'segoeUi' isn't defined for the type 'GoogleFonts' - lib\presentation\features\calendar\calendar_page.dart:633:38 - undefined_method
+  error - The method 'segoeUi' isn't defined for the type 'GoogleFonts' - lib\presentation\features\calendar\calendar_page.dart:650:36 - undefined_method
+  error - The method 'segoeUi' isn't defined for the type 'GoogleFonts' - lib\presentation\features\calendar\calendar_page.dart:673:40 - undefined_method
+  error - The method 'segoeUi' isn't defined for the type 'GoogleFonts' - lib\presentation\features\calendar\calendar_page.dart:754:52 - undefined_method
+  error - The method 'segoeUi' isn't defined for the type 'GoogleFonts' - lib\presentation\features\calendar\calendar_page.dart:773:56 - undefined_method
+  error - The method 'segoeUi' isn't defined for the type 'GoogleFonts' - lib\presentation\features\calendar\calendar_page.dart:791:44 - undefined_method
+  error - The method 'segoeUi' isn't defined for the type 'GoogleFonts' - lib\presentation\features\calendar\calendar_page.dart:871:28 - undefined_method
+warning - Unused import: '../../../core/theme/app_theme.dart' - lib\presentation\features\chatbot\chatbot_page.dart:3:8 - unused_import
+
+30 issues found. (ran in 3.4s)

@@ -68,14 +68,28 @@ dependencies:
   firebase_storage: ^12.4.10
   cached_network_image: ^3.3.1
   connectivity_plus: ^6.0.3
+  flutter_markdown: ^0.7.7+1
 
 flutter:
   uses-material-design: true
 
   assets:
+    - assets/images/logo.png
+    - assets/lottie/logo_animation.json
     - assets/lottie/splash.json
     - assets/lottie/empty_state.json
     - assets/lottie/study_mode.json
+    - assets/lottie/success.json
+    - assets/lottie/button_click.json
+    - assets/lottie/button_click_dark.json
+    - assets/lottie/loading.json
+    - assets/lottie/delete.json
+    - assets/lottie/add.json
+    - assets/lottie/save.json
+    - assets/lottie/confetti.json
+    - assets/lottie/particles_bg.json
+    - assets/lottie/floating_shapes.json
+    - assets/lottie/pulse.json
 dev_dependencies:
   flutter_test:
     sdk: flutter

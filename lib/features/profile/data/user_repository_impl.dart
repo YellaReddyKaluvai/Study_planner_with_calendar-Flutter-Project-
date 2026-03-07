@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import '../../auth/domain/user_entity.dart';
 import '../domain/user_repository.dart';
@@ -37,11 +38,14 @@ class UserRepositoryImpl implements UserRepository {
     return _firestore.collection('users').doc(uid).snapshots().map((snapshot) {
       if (!snapshot.exists) return UserEntity.empty();
       final data = snapshot.data()!;
+      // Fallback: use Firebase Auth's photoURL if Firestore doesn't have one
+      final firestorePhoto = data['photoUrl'] ?? data['photoURL'];
+      final authPhoto = FirebaseAuth.instance.currentUser?.photoURL;
       return UserEntity(
         uid: uid,
         email: data['email'] ?? data['Email'] ?? '',
         displayName: data['displayName'] ?? data['DisplayName'],
-        photoUrl: data['photoUrl'] ?? data['photoURL'],
+        photoUrl: firestorePhoto ?? authPhoto,
         createdAt: (data['createdAt'] as Timestamp?)?.toDate(),
         lastLoginAt: (data['lastLoginAt'] as Timestamp?)?.toDate(),
       );

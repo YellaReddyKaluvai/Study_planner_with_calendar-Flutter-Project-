@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:lottie/lottie.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../providers/task_provider.dart';
 import '../../../shared/glass_container.dart';
 import '../../../../domain/entities/task.dart';
 import '../qr_scan_page.dart';
+import '../../../../ui/widgets/success_dialog.dart';
 
 class TaskCreationSheet extends StatefulWidget {
   /// Pass an existing task to open the sheet in edit mode.
@@ -60,6 +62,14 @@ class _TaskCreationSheetState extends State<TaskCreationSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subtextColor = isDark ? Colors.white70 : Colors.black54;
+    final hintColor = isDark ? Colors.white38 : Colors.black38;
+    final chipBg = isDark ? Colors.white10 : Colors.grey.shade200;
+    final dividerColor = isDark ? Colors.white10 : Colors.grey.shade300;
+    final handleColor = isDark ? Colors.white24 : Colors.grey.shade400;
+
     return GlassContainer(
       margin: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -76,7 +86,7 @@ class _TaskCreationSheetState extends State<TaskCreationSheet> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.white24,
+                  color: handleColor,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -90,7 +100,7 @@ class _TaskCreationSheetState extends State<TaskCreationSheet> {
                   style: GoogleFonts.inter(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: textColor,
                   ),
                 ),
                 const Spacer(),
@@ -100,7 +110,8 @@ class _TaskCreationSheetState extends State<TaskCreationSheet> {
                     icon: const Icon(Icons.qr_code_scanner,
                         color: AppTheme.primary, size: 18),
                     label: const Text('Import QR',
-                        style: TextStyle(color: AppTheme.primary, fontSize: 12)),
+                        style:
+                            TextStyle(color: AppTheme.primary, fontSize: 12)),
                     style: TextButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                     ),
@@ -113,32 +124,33 @@ class _TaskCreationSheetState extends State<TaskCreationSheet> {
             TextField(
               controller: _titleController,
               autofocus: !_isEditing,
-              style: const TextStyle(color: Colors.white, fontSize: 18),
+              style: TextStyle(color: textColor, fontSize: 18),
               onChanged: (_) {
                 if (_titleError != null) setState(() => _titleError = null);
               },
               decoration: InputDecoration(
                 hintText: "What do you need to do?",
-                hintStyle: const TextStyle(color: Colors.white38),
+                hintStyle: TextStyle(color: hintColor),
                 border: InputBorder.none,
                 errorText: _titleError,
-                errorStyle: const TextStyle(color: Colors.redAccent, fontSize: 11),
+                errorStyle:
+                    const TextStyle(color: Colors.redAccent, fontSize: 11),
               ),
             ),
 
-            const Divider(color: Colors.white10),
+            Divider(color: dividerColor),
 
             // Notes Input
             TextField(
               controller: _notesController,
-              style: const TextStyle(color: Colors.white70, fontSize: 14),
+              style: TextStyle(color: subtextColor, fontSize: 14),
               maxLines: 3,
               minLines: 1,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText: "Add notes, subtasks, or links...",
-                hintStyle: TextStyle(color: Colors.white24),
+                hintStyle: TextStyle(color: hintColor),
                 border: InputBorder.none,
-                prefixIcon: Icon(Icons.notes, color: Colors.white38, size: 20),
+                prefixIcon: Icon(Icons.notes, color: hintColor, size: 20),
               ),
             ),
 
@@ -155,16 +167,16 @@ class _TaskCreationSheetState extends State<TaskCreationSheet> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text("Start",
+                            Text("Start",
                                 style: TextStyle(
-                                    color: Colors.white54, fontSize: 12)),
+                                    color: subtextColor, fontSize: 12)),
                             ActionChip(
                               padding: EdgeInsets.zero,
                               label: Text(
                                 "${_startTime.day}/${_startTime.month} ${_startTime.hour}:${_startTime.minute.toString().padLeft(2, '0')}",
-                                style: const TextStyle(color: Colors.white),
+                                style: TextStyle(color: textColor),
                               ),
-                              backgroundColor: Colors.white10,
+                              backgroundColor: chipBg,
                               side: BorderSide.none,
                               onPressed: () => _pickDateTime(true),
                             ),
@@ -176,16 +188,16 @@ class _TaskCreationSheetState extends State<TaskCreationSheet> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text("End",
+                            Text("End",
                                 style: TextStyle(
-                                    color: Colors.white54, fontSize: 12)),
+                                    color: subtextColor, fontSize: 12)),
                             ActionChip(
                               padding: EdgeInsets.zero,
                               label: Text(
                                 "${_endTime.day}/${_endTime.month} ${_endTime.hour}:${_endTime.minute.toString().padLeft(2, '0')}",
-                                style: const TextStyle(color: Colors.white),
+                                style: TextStyle(color: textColor),
                               ),
-                              backgroundColor: Colors.white10,
+                              backgroundColor: chipBg,
                               side: BorderSide.none,
                               onPressed: () => _pickDateTime(false),
                             ),
@@ -202,8 +214,7 @@ class _TaskCreationSheetState extends State<TaskCreationSheet> {
                   child: DropdownButton<Color>(
                     value: _selectedColor,
                     dropdownColor: AppTheme.surface,
-                    icon:
-                        const Icon(Icons.circle, size: 12),
+                    icon: const Icon(Icons.circle, size: 12),
                     items: _colors.map((color) {
                       return DropdownMenuItem(
                         value: color,
@@ -228,8 +239,7 @@ class _TaskCreationSheetState extends State<TaskCreationSheet> {
             // Priority Selector
             Row(
               children: [
-                const Text("Priority:",
-                    style: TextStyle(color: Colors.white70)),
+                Text("Priority:", style: TextStyle(color: subtextColor)),
                 const SizedBox(width: 12),
                 Wrap(
                   spacing: 8,
@@ -250,10 +260,10 @@ class _TaskCreationSheetState extends State<TaskCreationSheet> {
                       onSelected: (selected) {
                         setState(() => _selectedPriority = priority);
                       },
-                      backgroundColor: Colors.white10,
+                      backgroundColor: chipBg,
                       selectedColor: color.withOpacity(0.2),
                       labelStyle: TextStyle(
-                        color: isSelected ? color : Colors.white60,
+                        color: isSelected ? color : subtextColor,
                         fontWeight:
                             isSelected ? FontWeight.bold : FontWeight.normal,
                       ),
@@ -275,23 +285,25 @@ class _TaskCreationSheetState extends State<TaskCreationSheet> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
+                color: isDark
+                    ? Colors.white.withOpacity(0.05)
+                    : Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: DropdownButtonHideUnderline(
                 child: DropdownButton<String>(
                   value: _selectedCategory,
-                  dropdownColor: const Color(0xFF1E2433),
+                  dropdownColor:
+                      isDark ? const Color(0xFF1E2433) : Colors.white,
                   isExpanded: true,
-                  icon: const Icon(Icons.keyboard_arrow_down,
-                      color: Colors.white54),
+                  icon: Icon(Icons.keyboard_arrow_down, color: subtextColor),
                   items: ['Study', 'Assignment', 'Exam', 'Other']
                       .map((String category) {
                     return DropdownMenuItem<String>(
                       value: category.toLowerCase(),
                       child: Text(
                         category,
-                        style: const TextStyle(color: Colors.white),
+                        style: TextStyle(color: textColor),
                       ),
                     );
                   }).toList(),
@@ -306,24 +318,11 @@ class _TaskCreationSheetState extends State<TaskCreationSheet> {
 
             const SizedBox(height: 24),
 
-            // Create / Update Button
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _submit,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primary,
-                  foregroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: Text(
-                  _isEditing ? "Update Task" : "Create Task",
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ),
+            // Create / Update Button with Animation
+            _AnimatedCreateButton(
+              onPressed: _submit,
+              label: _isEditing ? "Update Task" : "Create Task",
+              isEditing: _isEditing,
             ),
           ],
         ),
@@ -380,6 +379,14 @@ class _TaskCreationSheetState extends State<TaskCreationSheet> {
       );
     }
     Navigator.pop(context);
+
+    // Show success animation for new task
+    if (!_isEditing && context.mounted) {
+      SuccessDialog.show(
+        context: context,
+        message: 'Task Added Successfully! 🎉',
+      );
+    }
   }
 
   Future<void> _openQrScan() async {
@@ -400,11 +407,9 @@ class _TaskCreationSheetState extends State<TaskCreationSheet> {
         type: scannedTask.type,
       );
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Task imported from QR ✓'),
-            backgroundColor: Color(0xFF4CAF50),
-          ),
+        SuccessDialog.show(
+          context: context,
+          message: 'Task Imported from QR! 🎉',
         );
       }
     }
@@ -456,5 +461,118 @@ class _TaskCreationSheetState extends State<TaskCreationSheet> {
         });
       }
     }
+  }
+}
+
+/// Animated Create/Update Task Button with Lottie
+class _AnimatedCreateButton extends StatefulWidget {
+  final VoidCallback onPressed;
+  final String label;
+  final bool isEditing;
+
+  const _AnimatedCreateButton({
+    required this.onPressed,
+    required this.label,
+    required this.isEditing,
+  });
+
+  @override
+  State<_AnimatedCreateButton> createState() => _AnimatedCreateButtonState();
+}
+
+class _AnimatedCreateButtonState extends State<_AnimatedCreateButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  bool _showAnimation = false;
+  bool _isPressed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _handlePress() {
+    setState(() {
+      _showAnimation = true;
+      _isPressed = true;
+    });
+
+    _controller.forward(from: 0);
+
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (mounted) {
+        setState(() {
+          _showAnimation = false;
+          _isPressed = false;
+        });
+      }
+    });
+
+    widget.onPressed();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.center,
+        children: [
+          GestureDetector(
+            onTap: _handlePress,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              transform: Matrix4.identity()..scale(_isPressed ? 0.97 : 1.0),
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              decoration: BoxDecoration(
+                color: AppTheme.primary,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.primary.withOpacity(0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Center(
+                child: Text(
+                  widget.label,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          if (_showAnimation)
+            Positioned.fill(
+              child: IgnorePointer(
+                child: Lottie.asset(
+                  widget.isEditing
+                      ? 'assets/lottie/save.json'
+                      : 'assets/lottie/add.json',
+                  controller: _controller,
+                  fit: BoxFit.contain,
+                  repeat: false,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 }

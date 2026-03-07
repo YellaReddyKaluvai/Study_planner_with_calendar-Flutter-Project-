@@ -3,12 +3,17 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../shared/glass_container.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/color_palette.dart';
 import '../../../../core/services/auth_service.dart';
+import '../../../../services/notification_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/theme_provider.dart';
+
+import '../../../../ui/widgets/enhanced_background.dart';
+import 'package:lottie/lottie.dart';
 
 class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key});
@@ -23,48 +28,90 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   bool _cloudSync = false;
 
   @override
+  void initState() {
+    super.initState();
+    _loadNotificationPref();
+  }
+
+  Future<void> _loadNotificationPref() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        _notifications = prefs.getBool('notifications_enabled') ?? true;
+      });
+    }
+  }
+
+  Future<void> _toggleNotifications(bool val) async {
+    setState(() => _notifications = val);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('notifications_enabled', val);
+    final notifService = NotificationService();
+    if (val) {
+      await notifService.showSimpleNotification(
+        '🔔 Notifications Enabled',
+        'You will now receive task reminders.',
+      );
+    } else {
+      await notifService.cancelAll();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(
-          24, 60, 24, 100), // Top padding for status bar, bottom for nav bar
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // 1. Profile Header
-          _buildProfileHeader(),
 
-          const SizedBox(height: 32),
+    return Stack(
+      children: [
+        // Enhanced Background
+        const EnhancedAnimatedBackground(
+          child: SizedBox.expand(),
+        ),
 
-          // 2. Stats Grid
-          _buildStatsGrid(),
+        // Content
+        SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(24, 60, 24,
+              100), // Top padding for status bar, bottom for nav bar
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // 1. Profile Header
+              _buildProfileHeader(),
 
-          const SizedBox(height: 32),
+              const SizedBox(height: 32),
 
-          // 3. Badges / Achievements
-          _buildBadgesSection(),
+              // 2. Stats Grid
+              _buildStatsGrid(),
 
-          const SizedBox(height: 32),
+              const SizedBox(height: 32),
 
-          // 4. Settings
-          _buildSettingsSection(),
+              // 3. Badges / Achievements
+              _buildBadgesSection(),
 
-          const SizedBox(height: 20),
-          
-          // Sign Out Button
-          _buildSignOutButton(),
+              const SizedBox(height: 32),
 
-          const SizedBox(height: 20),
+              // 4. Settings
+              _buildSettingsSection(),
 
-          Center(
-              child: Text("v1.0.0 Ultra",
-                  style: TextStyle(color: isDark ? Colors.white24 : Colors.black26, fontSize: 12)))
-        ],
-      )
-          .animate()
-          .fade(duration: 600.ms)
-          .slideY(begin: 0.1, end: 0, curve: Curves.easeOutQuad),
+              const SizedBox(height: 20),
+
+              // Sign Out Button
+              _buildSignOutButton(),
+
+              const SizedBox(height: 20),
+
+              Center(
+                  child: Text("v1.0.0 Ultra",
+                      style: TextStyle(
+                          color: isDark ? Colors.white24 : Colors.black26,
+                          fontSize: 12)))
+            ],
+          )
+              .animate()
+              .fade(duration: 600.ms)
+              .slideY(begin: 0.1, end: 0, curve: Curves.easeOutQuad),
+        ),
+      ],
     );
   }
 
@@ -74,7 +121,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       builder: (context, snapshot) {
         final user = snapshot.data;
         final isDark = Theme.of(context).brightness == Brightness.dark;
-        
+
         return Column(
           children: [
             Container(
@@ -92,25 +139,18 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               child: CircleAvatar(
                 radius: 50,
                 backgroundColor: AppTheme.primary.withOpacity(0.2),
-                child: user?.photoURL != null && user!.photoURL!.isNotEmpty
-                    ? ClipOval(
-                        child: CachedNetworkImage(
-                          imageUrl: user.photoURL!,
-                          width: 100,
-                          height: 100,
-                          fit: BoxFit.cover,
-                          placeholder: (context, url) => CircularProgressIndicator(
-                            color: AppTheme.primary,
-                            strokeWidth: 2,
-                          ),
-                          errorWidget: (context, url, error) => Icon(
-                            Icons.person,
-                            size: 50,
-                            color: Colors.white70,
-                          ),
-                        ),
-                      )
-                    : Icon(Icons.person, size: 50, color: Colors.white70),
+                backgroundImage:
+                    (user?.photoURL != null && user!.photoURL!.isNotEmpty)
+                        ? CachedNetworkImageProvider(user.photoURL!)
+                        : null,
+                child: (user?.photoURL == null ||
+                        (user != null && (user.photoURL?.isEmpty ?? true)))
+                    ? Icon(Icons.person,
+                        size: 50,
+                        color: isDark
+                            ? Colors.white70
+                            : AppPalette.textSecondaryLight)
+                    : null,
               ),
             ).animate().scale(duration: 600.ms, curve: Curves.elasticOut),
             const SizedBox(height: 16),
@@ -126,7 +166,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               Text(
                 user!.email!,
                 style: TextStyle(
-                  color: isDark ? Colors.white.withOpacity(0.7) : AppPalette.textSecondaryLight,
+                  color: isDark
+                      ? Colors.white.withOpacity(0.7)
+                      : AppPalette.textSecondaryLight,
                   fontSize: 14,
                 ),
               ).animate().fade(delay: 300.ms).slideY(begin: 0.2, end: 0),
@@ -137,21 +179,22 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   }
 
   Widget _buildStatsGrid() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
     return Row(
       children: [
         Expanded(
-            child: _buildStatCard("Tasks Completed", "142",
-                Icons.check_circle_outline, Colors.greenAccent)),
+          child: _buildStatCard("Tasks Completed", "142",
+              Icons.check_circle_outline, Colors.greenAccent),
+        ),
         const SizedBox(width: 16),
         Expanded(
-            child: _buildStatCard("Focus Hours", "48.5", Icons.timer_outlined,
-                Colors.orangeAccent)),
+          child: _buildStatCard(
+              "Focus Hours", "48.5", Icons.timer_outlined, Colors.orangeAccent),
+        ),
         const SizedBox(width: 16),
         Expanded(
-            child: _buildStatCard("Current Streak", "12 Days",
-                Icons.local_fire_department, Colors.redAccent)),
+          child: _buildStatCard("Current Streak", "12 Days",
+              Icons.local_fire_department, Colors.redAccent),
+        ),
       ],
     ).animate().fade(delay: 400.ms).slideX(begin: 0.1, end: 0);
   }
@@ -160,8 +203,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       String label, String value, IconData icon, Color color) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : AppPalette.textPrimaryLight;
-    final subtitleColor = isDark ? Colors.white54 : AppPalette.textSecondaryLight;
-    
+    final subtitleColor =
+        isDark ? Colors.white54 : AppPalette.textSecondaryLight;
+
     return GlassContainer(
       padding: const EdgeInsets.all(16),
       borderRadius: BorderRadius.circular(20),
@@ -194,8 +238,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   Widget _buildBadgesSection() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : AppPalette.textPrimaryLight;
-    final subtitleColor = isDark ? Colors.white70 : AppPalette.textSecondaryLight;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -218,13 +261,13 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           ),
         ),
       ],
-    ).animate().fade(delay: 500.ms).slideX(begin: 0.1, end: 0);
+    );
   }
 
   Widget _buildBadge(String label, IconData icon, Color color) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white70 : AppPalette.textSecondaryLight;
-    
+
     return Container(
       width: 80,
       margin: const EdgeInsets.only(right: 16),
@@ -249,9 +292,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   }
 
   Widget _buildSettingsSection() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final themeMode = ref.watch(themeProvider);
-    
+
     return GlassContainer(
       padding: const EdgeInsets.all(8),
       borderRadius: BorderRadius.circular(24),
@@ -265,19 +307,15 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               "Get reminders for tasks",
               _notifications,
               Icons.notifications_active,
-              (val) => setState(() => _notifications = val)),
+              (val) => _toggleNotifications(val)),
           const Divider(color: Colors.white10),
           _buildSwitchTile("Cloud Sync", "Backup data to cloud", _cloudSync,
               Icons.cloud_upload, (val) => setState(() => _cloudSync = val)),
           const Divider(color: Colors.white10),
-          _buildSwitchTile(
-              "Dark Mode",
-              "Toggle dark/light theme",
-              themeMode == ThemeMode.dark,
-              Icons.dark_mode,
-              (val) {
-                ref.read(themeProvider.notifier).toggleTheme();
-              }),
+          _buildSwitchTile("Dark Mode", "Toggle dark/light theme",
+              themeMode == ThemeMode.dark, Icons.dark_mode, (val) {
+            ref.read(themeProvider.notifier).toggleTheme();
+          }),
         ],
       ),
     ).animate().fade(delay: 600.ms).slideY(begin: 0.2, end: 0);
@@ -287,66 +325,142 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       IconData icon, Function(bool) onChanged) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : AppPalette.textPrimaryLight;
-    final subtitleColor = isDark ? Colors.white38 : AppPalette.textSecondaryLight;
-    
+    final subtitleColor =
+        isDark ? Colors.white38 : AppPalette.textSecondaryLight;
+
     return SwitchListTile(
       value: value,
       onChanged: onChanged,
       activeThumbColor: AppTheme.primary,
+      title: Text(title, style: TextStyle(color: textColor)),
+      subtitle: Text(subtitle, style: TextStyle(color: subtitleColor)),
       secondary: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
+          color: isDark
+              ? Colors.white.withOpacity(0.05)
+              : Colors.black.withOpacity(0.05),
           borderRadius: BorderRadius.circular(10),
         ),
-        child: Icon(icon, color: textColor, size: 20),
+        child: Icon(icon, color: AppTheme.primary),
       ),
-      title: Text(title,
-          style: TextStyle(
-              color: textColor, fontWeight: FontWeight.w600)),
-      subtitle: Text(subtitle,
-          style: TextStyle(color: subtitleColor, fontSize: 12)),
     );
   }
-  
+
   Widget _buildSignOutButton() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    return GlassContainer(
-      padding: const EdgeInsets.all(16),
-      borderRadius: BorderRadius.circular(20),
-      child: ListTile(
-        leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: AppTheme.error.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(Icons.logout, color: AppTheme.error, size: 20),
-        ),
-        title: Text(
-          'Sign Out',
-          style: TextStyle(
-            color: AppTheme.error,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        subtitle: Text(
-          'Log out of your account',
-          style: TextStyle(
-            color: isDark ? Colors.white38 : AppPalette.textSecondaryLight,
-            fontSize: 12,
-          ),
-        ),
-        trailing: Icon(Icons.arrow_forward_ios, color: AppTheme.error, size: 16),
-        onTap: () async {
-          final authService = AuthService();
-          await authService.signOut();
-          if (context.mounted) {
-            Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
-          }
-        },
-      ),
+    return _AnimatedSignOutButton(
+      onPressed: () async {
+        final authService = AuthService();
+        await authService.signOut();
+        if (context.mounted) {
+          Navigator.of(context)
+              .pushNamedAndRemoveUntil('/login', (route) => false);
+        }
+      },
     ).animate().fade(delay: 700.ms).slideY(begin: 0.2, end: 0);
+  }
+}
+
+class _AnimatedSignOutButton extends StatefulWidget {
+  final VoidCallback onPressed;
+
+  const _AnimatedSignOutButton({required this.onPressed});
+
+  @override
+  State<_AnimatedSignOutButton> createState() => _AnimatedSignOutButtonState();
+}
+
+class _AnimatedSignOutButtonState extends State<_AnimatedSignOutButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  bool _showAnimation = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _handleTap() async {
+    setState(() => _showAnimation = true);
+    await _controller.forward();
+    await _controller.reverse();
+
+    await Future.delayed(const Duration(milliseconds: 200));
+    if (mounted) {
+      setState(() => _showAnimation = false);
+      widget.onPressed();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return ScaleTransition(
+      scale: _scaleAnimation,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          GlassContainer(
+            padding: const EdgeInsets.all(16),
+            borderRadius: BorderRadius.circular(20),
+            child: ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.error.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(Icons.logout, color: AppTheme.error, size: 20),
+              ),
+              title: Text(
+                'Sign Out',
+                style: TextStyle(
+                  color: AppTheme.error,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              subtitle: Text(
+                'Log out of your account',
+                style: TextStyle(
+                  color:
+                      isDark ? Colors.white38 : AppPalette.textSecondaryLight,
+                  fontSize: 12,
+                ),
+              ),
+              trailing: Icon(Icons.arrow_forward_ios,
+                  color: AppTheme.error, size: 16),
+              onTap: _handleTap,
+            ),
+          ),
+          if (_showAnimation)
+            Positioned.fill(
+              child: IgnorePointer(
+                child: Lottie.asset(
+                  isDark
+                      ? 'assets/lottie/button_click.json'
+                      : 'assets/lottie/button_click_dark.json',
+                  fit: BoxFit.contain,
+                  repeat: false,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 }

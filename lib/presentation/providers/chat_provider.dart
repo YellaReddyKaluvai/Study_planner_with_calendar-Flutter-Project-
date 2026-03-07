@@ -21,13 +21,19 @@ class ChatProvider extends ChangeNotifier {
     if (history.isNotEmpty) {
       _messages = List<Map<String, dynamic>>.from(history);
     } else {
-      // Default welcome message if empty
       _messages = [
         {
           'id': 'welcome',
           'role': 'ai',
           'content':
-              'Hello! I am your AI study assistant (Powered by Gemini). How can I help you focus today?',
+              '👋 Hi there! I\'m your **AI Study Assistant** powered by Gemini.\n\n'
+                  'I can help you with:\n'
+                  '- 📋 Creating personalized study plans\n'
+                  '- 🧠 Memorization techniques & tips\n'
+                  '- ⏰ Time management strategies\n'
+                  '- 📊 Analyzing your tasks & priorities\n'
+                  '- 💡 Explaining any topic or concept\n\n'
+                  '> **Tip**: Set your Gemini API key using the 🔑 icon above to get started!',
           'timestamp': DateTime.now().toIso8601String(),
         }
       ];
@@ -50,26 +56,63 @@ class ChatProvider extends ChangeNotifier {
     _isTyping = true;
     notifyListeners();
 
+    final String aiMsgId = const Uuid().v4();
+
     try {
-      final response = await _geminiService.chat(text, tasks: tasks);
+      final stream = _geminiService.chatStream(text, tasks: tasks);
 
       final aiMsg = {
-        'id': const Uuid().v4(),
+        'id': aiMsgId,
         'role': 'ai',
-        'content': response,
+        'content': '',
         'timestamp': DateTime.now().toIso8601String(),
       };
-
       _messages.add(aiMsg);
-      await DatabaseHelper.instance.saveMessage(aiMsg);
+
+      await for (final chunk in stream) {
+        final msgIndex = _messages.indexWhere((m) => m['id'] == aiMsgId);
+        if (msgIndex != -1) {
+          _messages[msgIndex]['content'] += chunk;
+          notifyListeners();
+        }
+      }
+
+      // Save after stream completes
+      final finalMsgIndex = _messages.indexWhere((m) => m['id'] == aiMsgId);
+      if (finalMsgIndex != -1) {
+        await DatabaseHelper.instance.saveMessage(_messages[finalMsgIndex]);
+      }
     } catch (e) {
-      // If error, add error message but don't persist it as "history" effectively,
-      // or maybe we DO persist it so the user sees the error history?
-      // For now, let's show it in UI.
+      // Remove empty placeholder
+      final msgIndex = _messages.indexWhere((m) => m['id'] == aiMsgId);
+      if (msgIndex != -1 && _messages[msgIndex]['content'].isEmpty) {
+        _messages.removeAt(msgIndex);
+      }
+
+      // User-friendly error message
+      String errorContent;
+      final errorStr = e.toString();
+      if (errorStr.contains('API Key') || errorStr.contains('API_KEY')) {
+        errorContent = '🔑 **API Key Required**\n\n'
+            'Please set your Gemini API key to start chatting:\n'
+            '1. Tap the 🔑 icon in the top right\n'
+            '2. Get a free key from [aistudio.google.com](https://aistudio.google.com)\n'
+            '3. Paste your key and save\n\n'
+            '> It only takes 30 seconds!';
+      } else if (errorStr.contains('network') ||
+          errorStr.contains('SocketException')) {
+        errorContent = '📡 **Connection Error**\n\n'
+            'Unable to reach the AI service. Please check your internet connection and try again.';
+      } else {
+        errorContent = '⚠️ **Something went wrong**\n\n'
+            '${errorStr.replaceAll('Exception: ', '')}\n\n'
+            'Please try again in a moment.';
+      }
+
       final errorMsg = {
         'id': const Uuid().v4(),
         'role': 'ai',
-        'content': "Error: ${e.toString()}",
+        'content': errorContent,
         'timestamp': DateTime.now().toIso8601String(),
       };
       _messages.add(errorMsg);
@@ -85,8 +128,8 @@ class ChatProvider extends ChangeNotifier {
       {
         'id': 'welcome',
         'role': 'ai',
-        'content':
-            'Hello! I am your AI study assistant (Powered by Gemini). How can I help you focus today?',
+        'content': '👋 Chat cleared! I\'m ready to help with your studies.\n\n'
+            'Ask me anything — study plans, exam tips, or concept explanations!',
         'timestamp': DateTime.now().toIso8601String(),
       }
     ];
@@ -96,6 +139,18 @@ class ChatProvider extends ChangeNotifier {
 
   Future<void> setApiKey(String key) async {
     await _geminiService.setApiKey(key);
-    // Maybe send a system message saying "API Key updated!"
+
+    final msg = {
+      'id': const Uuid().v4(),
+      'role': 'ai',
+      'content': '✅ **API Key Saved!**\n\n'
+          'I\'m now connected and ready to help. Try asking me:\n'
+          '- "Create a study plan for my upcoming tasks"\n'
+          '- "How should I prepare for a math exam?"\n'
+          '- "Explain the Pomodoro technique"',
+      'timestamp': DateTime.now().toIso8601String(),
+    };
+    _messages.add(msg);
+    notifyListeners();
   }
 }

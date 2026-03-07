@@ -6,16 +6,17 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../../../core/widgets/glass_container.dart';
+
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/theme_provider.dart';
 import '../../../core/theme/language_provider.dart';
 import '../../../core/theme/app_strings.dart';
 import '../../auth/presentation/auth_notifier.dart';
-import '../../auth/presentation/auth_providers.dart';
+
 import 'profile_notifier.dart';
 import '../../../services/notification_service.dart';
+import '../../../core/services/cloud_backup_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfilePage extends ConsumerStatefulWidget {
@@ -33,11 +34,15 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   bool _studyStreak = true;
   bool _xpRewards = true;
   bool _dailyDigest = false;
+  bool _isBackingUp = false;
+  bool _isRestoring = false;
+  DateTime? _lastBackupTime;
 
   @override
   void initState() {
     super.initState();
     _loadNotifPrefs();
+    _loadBackupTime();
   }
 
   Future<void> _loadNotifPrefs() async {
@@ -55,6 +60,73 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   Future<void> _saveNotifPref(String key, bool value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(key, value);
+  }
+
+  Future<void> _loadBackupTime() async {
+    final time = await CloudBackupService().getLastBackupTime();
+    if (mounted) setState(() => _lastBackupTime = time);
+  }
+
+  Future<void> _handleBackup() async {
+    setState(() => _isBackingUp = true);
+    final ok = await CloudBackupService().backupToCloud();
+    if (ok) await _loadBackupTime();
+    if (mounted) {
+      setState(() => _isBackingUp = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(ok ? '☁️ Backup successful!' : '❌ Backup failed'),
+          backgroundColor: ok ? AppTheme.success : Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+      );
+    }
+  }
+
+  Future<void> _handleRestore() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E293B),
+        title: Text('Restore from Cloud',
+            style: GoogleFonts.outfit(color: Colors.white)),
+        content: const Text(
+          'This will replace your local data with the cloud backup. Continue?',
+          style: TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child:
+                const Text('Cancel', style: TextStyle(color: Colors.white54)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text('Restore', style: TextStyle(color: AppTheme.primary)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    setState(() => _isRestoring = true);
+    final ok = await CloudBackupService().restoreFromCloud();
+    if (mounted) {
+      setState(() => _isRestoring = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(ok
+              ? '☁️ Restore successful! Restart the app.'
+              : '❌ Restore failed'),
+          backgroundColor: ok ? AppTheme.success : Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+      );
+    }
   }
 
   Future<void> _pickImage() async {
@@ -85,7 +157,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: Text(s.cancel, style: const TextStyle(color: Colors.white54))),
+              child: Text(s.cancel,
+                  style: const TextStyle(color: Colors.white54))),
           TextButton(
             onPressed: () {
               if (controller.text.isNotEmpty) {
@@ -95,7 +168,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 Navigator.pop(ctx);
               }
             },
-            child: Text(s.save, style: const TextStyle(color: AppTheme.primary)),
+            child:
+                Text(s.save, style: const TextStyle(color: AppTheme.primary)),
           ),
         ],
       ),
@@ -233,6 +307,13 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           setSheetState(() {});
           onChanged(v);
           _saveNotifPref(key, v);
+          // Actually fire or cancel the notification
+          if (v) {
+            NotificationService().showSimpleNotification(
+              '✅ $title Enabled',
+              '$title are now active.',
+            );
+          }
         },
       ),
     );
@@ -296,9 +377,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       style:
                           const TextStyle(color: Colors.white54, fontSize: 12)),
                   onTap: () {
-                    ref
-                        .read(languageProvider.notifier)
-                        .setLocale(entry.value);
+                    ref.read(languageProvider.notifier).setLocale(entry.value);
                     Navigator.pop(ctx);
                   },
                 );
@@ -367,8 +446,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     Navigator.pop(ctx);
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text(
-                            'Password reset email sent to ${user.email}'),
+                        content:
+                            Text('Password reset email sent to ${user.email}'),
                         backgroundColor: AppTheme.success,
                       ),
                     );
@@ -439,7 +518,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   children: [
                     Text(title,
                         style: GoogleFonts.outfit(
-                            color: destructive ? Colors.redAccent : Colors.white,
+                            color:
+                                destructive ? Colors.redAccent : Colors.white,
                             fontSize: 14,
                             fontWeight: FontWeight.w600)),
                     Text(subtitle,
@@ -448,7 +528,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   ],
                 ),
               ),
-              Icon(Icons.arrow_forward_ios, size: 14, color: Colors.white54.withOpacity(0.5)),
+              Icon(Icons.arrow_forward_ios,
+                  size: 14, color: Colors.white54.withOpacity(0.5)),
             ],
           ),
         ),
@@ -499,7 +580,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final cardColor = isDark
         ? Colors.white.withOpacity(0.07)
         : Colors.black.withOpacity(0.04);
-    final dividerColor = isDark ? Colors.white10 : Colors.black.withOpacity(0.08);
+    final dividerColor =
+        isDark ? Colors.white10 : Colors.black.withOpacity(0.08);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -551,7 +633,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                                           height: 88,
                                           fit: BoxFit.cover,
                                           errorWidget: (_, __, ___) => Text(
-                                            user.displayName?[0].toUpperCase() ?? 'U',
+                                            user.displayName?[0]
+                                                    .toUpperCase() ??
+                                                'U',
                                             style: GoogleFonts.outfit(
                                                 fontSize: 38,
                                                 color: Colors.white),
@@ -616,7 +700,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   ),
                 ),
               ),
-
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.all(20.0),
@@ -633,12 +716,22 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       Row(
                         children: [
                           Expanded(
-                              child: _buildStatCard(s.joined, joinDate,
-                                  Icons.calendar_today, cardColor, textColor, subTextColor)),
+                              child: _buildStatCard(
+                                  s.joined,
+                                  joinDate,
+                                  Icons.calendar_today,
+                                  cardColor,
+                                  textColor,
+                                  subTextColor)),
                           const SizedBox(width: 10),
                           Expanded(
-                              child: _buildStatCard(s.lastLogin, lastLoginStr,
-                                  Icons.access_time, cardColor, textColor, subTextColor)),
+                              child: _buildStatCard(
+                                  s.lastLogin,
+                                  lastLoginStr,
+                                  Icons.access_time,
+                                  cardColor,
+                                  textColor,
+                                  subTextColor)),
                         ],
                       ),
                       const SizedBox(height: 28),
@@ -660,9 +753,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                           children: [
                             // Dark Mode Toggle
                             _buildSettingsTile(
-                              icon: isDark
-                                  ? Icons.dark_mode
-                                  : Icons.light_mode,
+                              icon: isDark ? Icons.dark_mode : Icons.light_mode,
                               title: s.darkMode,
                               subtitle: isDark ? s.darkModeOn : s.darkModeOff,
                               textColor: textColor,
@@ -685,8 +776,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                               subTextColor: subTextColor,
                               trailing: Icon(Icons.arrow_forward_ios,
                                   size: 14, color: subTextColor),
-                              onTap: () =>
-                                  _showNotificationSettings(context),
+                              onTap: () => _showNotificationSettings(context),
                             ),
                             Divider(height: 1, color: dividerColor),
                             // Language
@@ -719,20 +809,148 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       ),
                       const SizedBox(height: 32),
 
+                      // ─── Cloud Backup ────────────────────────────
+                      Text('☁️ Cloud Backup',
+                          style: GoogleFonts.outfit(
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold,
+                              color: textColor)),
+                      const SizedBox(height: 10),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: cardColor,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: dividerColor),
+                        ),
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  width: 38,
+                                  height: 38,
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.primary.withOpacity(0.12),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: const Icon(Icons.cloud_done_outlined,
+                                      color: AppTheme.primary, size: 20),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text('Last backup',
+                                          style: GoogleFonts.outfit(
+                                              fontSize: 13,
+                                              color: subTextColor)),
+                                      Text(
+                                        _lastBackupTime != null
+                                            ? DateFormat.yMMMd()
+                                                .add_jm()
+                                                .format(_lastBackupTime!)
+                                            : 'Never',
+                                        style: GoogleFonts.outfit(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600,
+                                            color: textColor),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: ElevatedButton.icon(
+                                    onPressed:
+                                        _isBackingUp ? null : _handleBackup,
+                                    icon: _isBackingUp
+                                        ? const SizedBox(
+                                            width: 16,
+                                            height: 16,
+                                            child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                color: Colors.white))
+                                        : const Icon(
+                                            Icons.cloud_upload_outlined,
+                                            size: 18),
+                                    label: Text(
+                                        _isBackingUp
+                                            ? 'Backing up...'
+                                            : 'Backup',
+                                        style: GoogleFonts.outfit(
+                                            fontWeight: FontWeight.w600)),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppTheme.primary,
+                                      foregroundColor: Colors.white,
+                                      shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(12)),
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 12),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: OutlinedButton.icon(
+                                    onPressed:
+                                        _isRestoring ? null : _handleRestore,
+                                    icon: _isRestoring
+                                        ? SizedBox(
+                                            width: 16,
+                                            height: 16,
+                                            child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                color: AppTheme.primary))
+                                        : Icon(Icons.cloud_download_outlined,
+                                            size: 18, color: AppTheme.primary),
+                                    label: Text(
+                                        _isRestoring
+                                            ? 'Restoring...'
+                                            : 'Restore',
+                                        style: GoogleFonts.outfit(
+                                            fontWeight: FontWeight.w600,
+                                            color: AppTheme.primary)),
+                                    style: OutlinedButton.styleFrom(
+                                      side: BorderSide(
+                                          color: AppTheme.primary
+                                              .withOpacity(0.5)),
+                                      shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(12)),
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 12),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+
                       // ─── Sign Out ──────────────────────────────────
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton.icon(
-                          onPressed: () => ref
-                              .read(authNotifierProvider.notifier)
-                              .signOut(),
+                          onPressed: () =>
+                              ref.read(authNotifierProvider.notifier).signOut(),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.redAccent.withOpacity(0.15),
                             foregroundColor: Colors.redAccent,
                             elevation: 0,
-                            side: const BorderSide(color: Colors.redAccent, width: 1),
-                            padding:
-                                const EdgeInsets.symmetric(vertical: 14),
+                            side: const BorderSide(
+                                color: Colors.redAccent, width: 1),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(14)),
                           ),
@@ -756,8 +974,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             children: [
               const CircularProgressIndicator(color: AppTheme.primary),
               const SizedBox(height: 16),
-              Text(s.loading,
-                  style: const TextStyle(color: Colors.white70)),
+              Text(s.loading, style: const TextStyle(color: Colors.white70)),
             ],
           ),
         ),
@@ -793,8 +1010,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       title: Text(title,
           style: GoogleFonts.outfit(
               color: textColor, fontSize: 14, fontWeight: FontWeight.w600)),
-      subtitle: Text(subtitle,
-          style: TextStyle(color: subTextColor, fontSize: 12)),
+      subtitle:
+          Text(subtitle, style: TextStyle(color: subTextColor, fontSize: 12)),
       trailing: trailing,
     );
   }
@@ -821,13 +1038,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           const SizedBox(height: 8),
           Text(value,
               style: GoogleFonts.outfit(
-                  color: textColor,
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold),
+                  color: textColor, fontSize: 13, fontWeight: FontWeight.bold),
               maxLines: 2),
           const SizedBox(height: 2),
-          Text(title,
-              style: TextStyle(color: subTextColor, fontSize: 11)),
+          Text(title, style: TextStyle(color: subTextColor, fontSize: 11)),
         ],
       ),
     );

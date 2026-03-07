@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
+import 'package:lottie/lottie.dart';
 import '../../providers/navigation_provider.dart';
 import '../../providers/task_provider.dart';
 import '../../providers/analytics_provider.dart';
@@ -17,6 +18,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/app_strings.dart';
 import '../../../features/profile/presentation/profile_page.dart';
+import '../../../ui/widgets/pulse_animation.dart';
 
 // Move the Dashboard content here
 class DashboardPage extends StatelessWidget {
@@ -35,7 +37,7 @@ class DashboardPage extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : Colors.black87;
     final subtextColor = isDark ? Colors.white70 : Colors.black54;
-    
+
     return Consumer2<TaskProvider, AnalyticsProvider>(
       builder: (context, taskProvider, analyticsProvider, _) {
         final completedTasks =
@@ -66,6 +68,7 @@ class DashboardPage extends StatelessWidget {
                             _greeting(context),
                             style: GoogleFonts.outfit(
                               fontSize: 16,
+                              fontWeight: FontWeight.w500,
                               color: subtextColor,
                             ),
                           ),
@@ -75,68 +78,59 @@ class DashboardPage extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 8),
-                      Text(
-                        AppStrings.of(context).todaysTasks,
-                        style: GoogleFonts.outfit(
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                          color: textColor,
-                          height: 1.1,
+                      ShaderMask(
+                        shaderCallback: (bounds) => LinearGradient(
+                          colors: [
+                            textColor,
+                            textColor.withOpacity(0.8),
+                          ],
+                        ).createShader(bounds),
+                        child: Text(
+                          AppStrings.of(context).todaysTasks,
+                          style: GoogleFonts.outfit(
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            height: 1.1,
+                            letterSpacing: -0.5,
+                          ),
                         ),
                       ),
                     ],
                   ),
                   Row(
                     children: [
-                      GlassContainer(
-                        padding: const EdgeInsets.all(2),
-                        borderRadius: BorderRadius.circular(20),
-                        gradient: AppTheme.primaryGradient,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: isDark ? AppTheme.surface : Colors.white,
-                            borderRadius: BorderRadius.circular(18),
-                          ),
-                          child: IconButton(
-                            icon: Icon(Icons.timer, color: AppTheme.primary),
-                            tooltip: 'Focus Timer',
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const FocusTimerPage(),
-                                ),
-                              ).then((_) {
-                                // Refresh analytics when returning from focus timer
-                                analyticsProvider.refreshData();
-                              });
-                            },
-                          ),
+                      _ActionButton(
+                        icon: Icons.timer,
+                        tooltip: 'Focus Timer',
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF6366F1), Color(0xFF818CF8)],
                         ),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const FocusTimerPage(),
+                            ),
+                          ).then((_) {
+                            analyticsProvider.refreshData();
+                          });
+                        },
                       ),
                       const SizedBox(width: 8),
-                      GlassContainer(
-                        padding: const EdgeInsets.all(2),
-                        borderRadius: BorderRadius.circular(20),
-                        gradient: AppTheme.primaryGradient,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: isDark ? AppTheme.surface : Colors.white,
-                            borderRadius: BorderRadius.circular(18),
-                          ),
-                          child: IconButton(
-                            icon: Icon(Icons.auto_awesome,
-                                color: AppTheme.primary),
-                            tooltip: 'AI Chatbot',
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const ChatbotPage()),
-                              );
-                            },
-                          ),
+                      _ActionButton(
+                        icon: Icons.auto_awesome,
+                        tooltip: 'AI Chatbot',
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF14B8A6), Color(0xFF2DD4BF)],
                         ),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const ChatbotPage()),
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -155,7 +149,7 @@ class DashboardPage extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: _StatCard(
+                    child: AnimatedStatCard(
                       title: AppStrings.of(context).tasksDone,
                       value: "$completedTasks",
                       icon: Icons.check_circle_outline,
@@ -164,7 +158,7 @@ class DashboardPage extends StatelessWidget {
                   ),
                   const SizedBox(width: 16),
                   Expanded(
-                    child: _StatCard(
+                    child: AnimatedStatCard(
                       title: AppStrings.of(context).totalTasks,
                       value: "$totalTasks",
                       icon: Icons.assignment,
@@ -172,7 +166,10 @@ class DashboardPage extends StatelessWidget {
                     ),
                   ),
                 ],
-              ).animate().fade(delay: 200.ms, duration: 600.ms).slideY(begin: 0.2, end: 0),
+              )
+                  .animate()
+                  .fade(delay: 200.ms, duration: 600.ms)
+                  .slideY(begin: 0.2, end: 0),
 
               const SizedBox(height: 12),
 
@@ -180,7 +177,7 @@ class DashboardPage extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: _StatCard(
+                    child: AnimatedStatCard(
                       title: AppStrings.of(context).focusTime,
                       value: focusMins == 0 ? '—' : focusLabel,
                       icon: Icons.timer_outlined,
@@ -190,7 +187,7 @@ class DashboardPage extends StatelessWidget {
                   ),
                   const SizedBox(width: 16),
                   Expanded(
-                    child: _StatCard(
+                    child: AnimatedStatCard(
                       title: AppStrings.of(context).avgSession,
                       value: analyticsProvider.averageSessionTime == 0
                           ? '—'
@@ -201,7 +198,10 @@ class DashboardPage extends StatelessWidget {
                     ),
                   ),
                 ],
-              ).animate().fade(delay: 300.ms, duration: 600.ms).slideY(begin: 0.2, end: 0),
+              )
+                  .animate()
+                  .fade(delay: 300.ms, duration: 600.ms)
+                  .slideY(begin: 0.2, end: 0),
 
               const SizedBox(height: 32),
 
@@ -218,6 +218,7 @@ class DashboardPage extends StatelessWidget {
   }
 }
 
+// ignore: unused_element
 class _StatCard extends StatelessWidget {
   final String title;
   final String value;
@@ -230,6 +231,7 @@ class _StatCard extends StatelessWidget {
     required this.value,
     required this.icon,
     required this.color,
+    // ignore: unused_element_parameter
     this.subtitle,
   });
 
@@ -238,7 +240,7 @@ class _StatCard extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : Colors.black87;
     final subtextColor = isDark ? Colors.white54 : Colors.black54;
-    
+
     return GlassContainer(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -248,7 +250,8 @@ class _StatCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Icon(icon, color: color, size: 20),
-              Icon(Icons.arrow_forward_ios, color: isDark ? Colors.white10 : Colors.black12, size: 12),
+              Icon(Icons.arrow_forward_ios,
+                  color: isDark ? Colors.white10 : Colors.black12, size: 12),
             ],
           ),
           const SizedBox(height: 12),
@@ -278,7 +281,6 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final navProvider = Provider.of<NavigationProvider>(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final List<Widget> pages = [
       const DashboardPage(),
@@ -308,7 +310,7 @@ class HomePage extends StatelessWidget {
                 icon: Icons.home_filled, index: 0, provider: navProvider),
             _NavBarIcon(
                 icon: Icons.calendar_month, index: 1, provider: navProvider),
-            FloatingActionButton(
+            _AnimatedFAB(
               onPressed: () {
                 showModalBottomSheet(
                   context: context,
@@ -317,9 +319,6 @@ class HomePage extends StatelessWidget {
                   builder: (context) => const TaskCreationSheet(),
                 );
               },
-              backgroundColor: Theme.of(context).primaryColor,
-              mini: true,
-              child: const Icon(Icons.add, color: Colors.white),
             ),
             _NavBarIcon(icon: Icons.games, index: 3, provider: navProvider),
             _NavBarIcon(icon: Icons.person, index: 4, provider: navProvider),
@@ -343,14 +342,259 @@ class _NavBarIcon extends StatelessWidget {
     final isSelected = provider.currentIndex == index;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final inactiveColor = isDark ? Colors.white54 : Colors.black45;
-    
-    return IconButton(
-      icon: Icon(
-        icon,
-        color: isSelected ? Theme.of(context).primaryColor : inactiveColor,
-        size: 28,
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+      padding: EdgeInsets.all(isSelected ? 12 : 8),
+      decoration: BoxDecoration(
+        color: isSelected
+            ? Theme.of(context).primaryColor.withOpacity(0.15)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: isSelected
+            ? [
+                BoxShadow(
+                  color: Theme.of(context).primaryColor.withOpacity(0.3),
+                  blurRadius: 8,
+                  spreadRadius: 0,
+                ),
+              ]
+            : [],
       ),
-      onPressed: () => provider.setIndex(index),
+      child: InkWell(
+        onTap: () => provider.setIndex(index),
+        borderRadius: BorderRadius.circular(16),
+        child: Icon(
+          icon,
+          color: isSelected ? Theme.of(context).primaryColor : inactiveColor,
+          size: isSelected ? 28 : 24,
+        ),
+      ),
+    );
+  }
+}
+
+/// Animated FloatingActionButton with Lottie animation and ripple effect
+class _AnimatedFAB extends StatefulWidget {
+  final VoidCallback onPressed;
+
+  const _AnimatedFAB({required this.onPressed});
+
+  @override
+  State<_AnimatedFAB> createState() => _AnimatedFABState();
+}
+
+class _AnimatedFABState extends State<_AnimatedFAB>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _rotateAnimation;
+  bool _showAnimation = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+
+    _scaleAnimation = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 1.0, end: 1.3)
+            .chain(CurveTween(curve: Curves.easeOut)),
+        weight: 30,
+      ),
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 1.3, end: 1.0)
+            .chain(CurveTween(curve: Curves.elasticOut)),
+        weight: 70,
+      ),
+    ]).animate(_controller);
+
+    _rotateAnimation = Tween<double>(begin: 0, end: 0.125).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _handlePress() {
+    setState(() => _showAnimation = true);
+    _controller.forward(from: 0);
+
+    Future.delayed(const Duration(milliseconds: 400), () {
+      if (mounted) setState(() => _showAnimation = false);
+    });
+
+    widget.onPressed();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      clipBehavior: Clip.none,
+      alignment: Alignment.center,
+      children: [
+        // Pulse effect
+        AnimatedBuilder(
+          animation: _controller,
+          builder: (context, child) {
+            return Transform.scale(
+              scale: 1 + (_controller.value * 0.5),
+              child: Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Theme.of(context)
+                      .primaryColor
+                      .withOpacity(0.3 * (1 - _controller.value)),
+                ),
+              ),
+            );
+          },
+        ),
+        // Main FAB
+        AnimatedBuilder(
+          animation: _scaleAnimation,
+          builder: (context, child) {
+            return Transform.scale(
+              scale: _scaleAnimation.value,
+              child: Transform.rotate(
+                angle: _rotateAnimation.value * 3.14159,
+                child: Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [
+                        Theme.of(context).primaryColor,
+                        Theme.of(context).primaryColor.withBlue(255),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Theme.of(context).primaryColor.withOpacity(0.5),
+                        blurRadius: 20,
+                        spreadRadius: 2,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: FloatingActionButton(
+                    onPressed: _handlePress,
+                    backgroundColor: Colors.transparent,
+                    elevation: 0,
+                    mini: true,
+                    child: const Icon(Icons.add, color: Colors.white, size: 32),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+        if (_showAnimation)
+          Positioned.fill(
+            child: IgnorePointer(
+              child: Transform.scale(
+                scale: 2.0,
+                child: Lottie.asset(
+                  'assets/lottie/add.json',
+                  controller: _controller,
+                  fit: BoxFit.contain,
+                  repeat: false,
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+// Enhanced Action Button Widget with press animations
+class _ActionButton extends StatefulWidget {
+  final IconData icon;
+  final String tooltip;
+  final Gradient gradient;
+  final VoidCallback onPressed;
+
+  const _ActionButton({
+    required this.icon,
+    required this.tooltip,
+    required this.gradient,
+    required this.onPressed,
+  });
+
+  @override
+  State<_ActionButton> createState() => _ActionButtonState();
+}
+
+class _ActionButtonState extends State<_ActionButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 150),
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ScaleTransition(
+      scale: _scaleAnimation,
+      child: GestureDetector(
+        onTapDown: (_) => _controller.forward(),
+        onTapUp: (_) {
+          _controller.reverse();
+          widget.onPressed();
+        },
+        onTapCancel: () => _controller.reverse(),
+        child: Tooltip(
+          message: widget.tooltip,
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              gradient: widget.gradient,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: widget.gradient.colors.first.withOpacity(0.4),
+                  blurRadius: 12,
+                  spreadRadius: 0,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Icon(
+              widget.icon,
+              color: Colors.white,
+              size: 24,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
