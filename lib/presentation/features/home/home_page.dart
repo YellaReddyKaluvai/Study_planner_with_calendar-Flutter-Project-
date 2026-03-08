@@ -312,7 +312,9 @@ class HomePage extends StatelessWidget {
                   _NavBarIcon(
                       icon: Icons.home_filled, index: 0, provider: navProvider),
                   _NavBarIcon(
-                      icon: Icons.calendar_month, index: 1, provider: navProvider),
+                      icon: Icons.calendar_month,
+                      index: 1,
+                      provider: navProvider),
                 ],
               ),
             ),
@@ -330,8 +332,10 @@ class HomePage extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _NavBarIcon(icon: Icons.games, index: 3, provider: navProvider),
-                  _NavBarIcon(icon: Icons.person, index: 4, provider: navProvider),
+                  _NavBarIcon(
+                      icon: Icons.games, index: 3, provider: navProvider),
+                  _NavBarIcon(
+                      icon: Icons.person, index: 4, provider: navProvider),
                 ],
               ),
             ),
@@ -402,7 +406,6 @@ class _AnimatedFABState extends State<_AnimatedFAB>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
-  late Animation<double> _rotateAnimation;
   bool _showAnimation = false;
 
   @override
@@ -425,10 +428,6 @@ class _AnimatedFABState extends State<_AnimatedFAB>
         weight: 70,
       ),
     ]).animate(_controller);
-
-    _rotateAnimation = Tween<double>(begin: 0, end: 0.125).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
   }
 
   @override
@@ -479,38 +478,34 @@ class _AnimatedFABState extends State<_AnimatedFAB>
           builder: (context, child) {
             return Transform.scale(
               scale: _scaleAnimation.value,
-              child: Transform.rotate(
-                angle: _rotateAnimation.value * 3.14159,
-                child: Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [
-                        Theme.of(context).primaryColor,
-                        Theme.of(context).primaryColor.withBlue(255),
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Theme.of(context).primaryColor.withOpacity(0.5),
-                        blurRadius: 20,
-                        spreadRadius: 2,
-                        offset: const Offset(0, 8),
-                      ),
+              child: Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    colors: [
+                      Theme.of(context).primaryColor,
+                      Theme.of(context).primaryColor.withBlue(255),
                     ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      customBorder: const CircleBorder(),
-                      onTap: _handlePress,
-                      child: const Center(
-                        child: Icon(Icons.add, color: Colors.white, size: 28),
-                      ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Theme.of(context).primaryColor.withOpacity(0.5),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: _handlePress,
+                    child: const Center(
+                      child: Icon(Icons.add, color: Colors.white, size: 28),
                     ),
                   ),
                 ),

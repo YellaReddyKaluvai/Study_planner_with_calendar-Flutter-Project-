@@ -46,7 +46,8 @@ class _CalendarPageState extends State<CalendarPage>
 
     // Listen for tab changes to reset to today when calendar tab becomes active
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final navProvider = Provider.of<NavigationProvider>(context, listen: false);
+      final navProvider =
+          Provider.of<NavigationProvider>(context, listen: false);
       navProvider.addListener(_onTabChanged);
     });
   }
@@ -65,7 +66,8 @@ class _CalendarPageState extends State<CalendarPage>
   void dispose() {
     // Remove the navigation listener
     try {
-      final navProvider = Provider.of<NavigationProvider>(context, listen: false);
+      final navProvider =
+          Provider.of<NavigationProvider>(context, listen: false);
       navProvider.removeListener(_onTabChanged);
     } catch (_) {}
     _headerAnimController.dispose();
@@ -288,7 +290,6 @@ class _CalendarPageState extends State<CalendarPage>
                           );
                         }
                       },
-
                     ),
                   ),
                 ),
@@ -609,6 +610,47 @@ class _CalendarPageState extends State<CalendarPage>
     final isCompleted = task.isCompleted;
     final w = details.bounds.width;
     final h = details.bounds.height;
+    final isCompact = w < 72 || h < 34;
+    final isMicro = w < 34 || h < 18;
+
+    if (isMicro) {
+      // Show first 3 chars with ellipsis for better readability
+      final trimmedTitle = task.title.trim();
+      final shortLabel = trimmedTitle.isEmpty
+          ? 'T'
+          : trimmedTitle.length > 3
+              ? '${trimmedTitle.substring(0, 3).toUpperCase()}...'
+              : trimmedTitle.toUpperCase();
+
+      return Container(
+        width: w,
+        height: h,
+        decoration: BoxDecoration(
+          color: isDark
+              ? task.color.withOpacity(0.24)
+              : task.color.withOpacity(0.16),
+          borderRadius: BorderRadius.circular(4),
+          border: Border(
+            left: BorderSide(
+              color: isCompleted ? task.color.withOpacity(0.4) : task.color,
+              width: 3,
+            ),
+          ),
+        ),
+        child: Center(
+          child: Text(
+            shortLabel,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.inter(
+              fontSize: 8,
+              fontWeight: FontWeight.w700,
+              color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+            ),
+          ),
+        ),
+      );
+    }
 
     return Container(
       width: w,
@@ -626,13 +668,19 @@ class _CalendarPageState extends State<CalendarPage>
         ),
       ),
       clipBehavior: Clip.hardEdge,
-      padding: const EdgeInsets.only(left: 4, right: 4, top: 2, bottom: 2),
+      padding: EdgeInsets.only(
+        left: isCompact ? 2 : 4,
+        right: isCompact ? 2 : 4,
+        top: 2,
+        bottom: 2,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             children: [
-              if (isCompleted)
+              if (isCompleted && !isCompact)
                 Padding(
                   padding: const EdgeInsets.only(right: 3),
                   child: Icon(
@@ -647,10 +695,10 @@ class _CalendarPageState extends State<CalendarPage>
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.inter(
-                    fontSize: 11,
+                    fontSize: isCompact ? 9 : 11,
                     fontWeight: FontWeight.w600,
                     color: isCompleted
-                        ? (isDark ? Colors.white54 : Colors.black38)
+                        ? (isDark ? Colors.white60 : Colors.black38)
                         : (isDark ? Colors.white : const Color(0xFF242424)),
                     decoration: isCompleted ? TextDecoration.lineThrough : null,
                   ),
@@ -658,7 +706,7 @@ class _CalendarPageState extends State<CalendarPage>
               ),
             ],
           ),
-          if (h > 36)
+          if (!isCompact && h > 36)
             Text(
               '${_formatTime(task.startTime)} – ${_formatTime(task.endTime)}',
               maxLines: 1,
@@ -669,7 +717,7 @@ class _CalendarPageState extends State<CalendarPage>
                 color: isDark ? Colors.white38 : const Color(0xFF999999),
               ),
             ),
-          if (h > 56)
+          if (!isCompact && h > 56)
             Row(
               children: [
                 Container(

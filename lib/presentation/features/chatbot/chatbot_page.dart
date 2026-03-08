@@ -5,8 +5,9 @@ import '../../providers/task_provider.dart';
 import '../../providers/chat_provider.dart';
 import '../../../services/voice_assistant_service.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../core/theme/color_palette.dart';
 
 class ChatbotPage extends StatefulWidget {
   const ChatbotPage({super.key});
@@ -26,13 +27,13 @@ class _ChatbotPageState extends State<ChatbotPage> {
   bool _ttsEnabled = false;
 
   // Ultra premium colors
-  static const Color _accentPurple = Color(0xFF6366F1);
-  static const Color _accentTeal = Color(0xFF14B8A6);
-  static const Color _bgDark1 = Color(0xFF0C111B);
-  static const Color _bgDark2 = Color(0xFF141B2D);
-  static const Color _surfaceDark = Color(0xFF1A2235);
-  static const Color _userBubble = Color(0xFF6366F1);
-  static const Color _aiBubble = Color(0xFF1E293B);
+  static const Color _accentPurple = AppPalette.primary;
+  static const Color _accentTeal = AppPalette.secondary;
+  static const Color _bgDark1 = AppPalette.backgroundDark;
+  static const Color _bgDark2 = AppPalette.surfaceDark;
+  static const Color _surfaceDark = AppPalette.cardDark;
+  static const Color _userBubble = AppPalette.primary;
+  static const Color _aiBubble = AppPalette.elevatedDark;
 
   @override
   void initState() {
@@ -83,6 +84,7 @@ class _ChatbotPageState extends State<ChatbotPage> {
   }
 
   void _showApiKeyDialog(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final TextEditingController keyController = TextEditingController();
     showDialog(
       context: context,
@@ -91,8 +93,11 @@ class _ChatbotPageState extends State<ChatbotPage> {
         child: Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [_bgDark2, _bgDark1],
+            gradient: LinearGradient(
+              colors: [
+                isDark ? _bgDark2 : AppPalette.cardLight,
+                isDark ? _bgDark1 : AppPalette.surfaceLight,
+              ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -132,7 +137,7 @@ class _ChatbotPageState extends State<ChatbotPage> {
                     style: GoogleFonts.outfit(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                      color: isDark ? Colors.white : Colors.black87,
                     ),
                   ),
                 ],
@@ -141,7 +146,7 @@ class _ChatbotPageState extends State<ChatbotPage> {
               Text(
                 "Get your free key from Google AI Studio",
                 style: GoogleFonts.inter(
-                  color: Colors.white60,
+                  color: isDark ? Colors.white60 : Colors.black54,
                   fontSize: 13,
                 ),
               ),
@@ -156,25 +161,25 @@ class _ChatbotPageState extends State<ChatbotPage> {
               const SizedBox(height: 20),
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.06),
+                  color: isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.04),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white.withOpacity(0.1)),
+                  border: Border.all(color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.1)),
                 ),
                 child: TextField(
                   controller: keyController,
                   style: GoogleFonts.jetBrainsMono(
-                    color: Colors.white,
+                    color: isDark ? Colors.white : Colors.black87,
                     fontSize: 13,
                   ),
                   decoration: InputDecoration(
                     hintText: "Paste your API key here...",
-                    hintStyle: TextStyle(color: Colors.white.withOpacity(0.25)),
+                    hintStyle: TextStyle(color: isDark ? Colors.white.withOpacity(0.25) : Colors.black.withOpacity(0.4)),
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 14),
                     suffixIcon: IconButton(
                       icon: Icon(Icons.clear_rounded,
-                          color: Colors.white.withOpacity(0.3), size: 18),
+                          color: isDark ? Colors.white.withOpacity(0.3) : Colors.black.withOpacity(0.3), size: 18),
                       onPressed: () => keyController.clear(),
                     ),
                   ),
@@ -191,12 +196,12 @@ class _ChatbotPageState extends State<ChatbotPage> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                           side:
-                              BorderSide(color: Colors.white.withOpacity(0.1)),
+                              BorderSide(color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.1)),
                         ),
                       ),
                       child: Text("Cancel",
                           style: GoogleFonts.inter(
-                              color: Colors.white54, fontSize: 14)),
+                              color: isDark ? Colors.white54 : Colors.black54, fontSize: 14)),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -233,7 +238,7 @@ class _ChatbotPageState extends State<ChatbotPage> {
                                       color: Colors.white, size: 18),
                                   const SizedBox(width: 8),
                                   Text('API Key saved successfully!',
-                                      style: GoogleFonts.inter()),
+                                      style: GoogleFonts.inter(color: Colors.white)),
                                 ],
                               ),
                               backgroundColor: _accentTeal,
@@ -267,6 +272,7 @@ class _ChatbotPageState extends State<ChatbotPage> {
   }
 
   void _copyToClipboard(String text) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     Clipboard.setData(ClipboardData(text: text));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -274,10 +280,10 @@ class _ChatbotPageState extends State<ChatbotPage> {
           children: [
             const Icon(Icons.copy_rounded, color: Colors.white, size: 16),
             const SizedBox(width: 8),
-            Text('Copied to clipboard', style: GoogleFonts.inter(fontSize: 13)),
+            Text('Copied to clipboard', style: GoogleFonts.inter(fontSize: 13, color: Colors.white)),
           ],
         ),
-        backgroundColor: _surfaceDark,
+        backgroundColor: isDark ? _surfaceDark : AppPalette.primary,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         duration: const Duration(seconds: 1),
@@ -296,6 +302,7 @@ class _ChatbotPageState extends State<ChatbotPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -322,21 +329,21 @@ class _ChatbotPageState extends State<ChatbotPage> {
             const SizedBox(width: 10),
             Text("Study AI",
                 style: GoogleFonts.outfit(
-                    color: Colors.white,
+                    color: isDark ? Colors.white : Colors.black87,
                     fontSize: 18,
                     fontWeight: FontWeight.w700)),
           ],
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: isDark ? Colors.white : Colors.black87),
         actions: [
           // TTS Toggle
           _buildAppBarAction(
             icon: _ttsEnabled
                 ? Icons.volume_up_rounded
                 : Icons.volume_off_rounded,
-            color: _ttsEnabled ? _accentTeal : Colors.white38,
+            color: _ttsEnabled ? _accentTeal : (isDark ? Colors.white38 : Colors.black54),
             tooltip: _ttsEnabled ? 'TTS On' : 'TTS Off',
             onPressed: () {
               setState(() {
@@ -347,13 +354,13 @@ class _ChatbotPageState extends State<ChatbotPage> {
           ),
           _buildAppBarAction(
             icon: Icons.key_rounded,
-            color: Colors.white70,
+            color: isDark ? Colors.white70 : Colors.black54,
             tooltip: 'Set API Key',
             onPressed: () => _showApiKeyDialog(context),
           ),
           _buildAppBarAction(
             icon: Icons.delete_sweep_rounded,
-            color: Colors.white70,
+            color: isDark ? Colors.white70 : Colors.black54,
             tooltip: 'Clear Chat',
             onPressed: () => context.read<ChatProvider>().clearHistory(),
           ),
@@ -361,12 +368,14 @@ class _ChatbotPageState extends State<ChatbotPage> {
         ],
       ),
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [_bgDark1, _bgDark2],
-            stops: [0.0, 0.7],
+            colors: isDark
+                ? [_bgDark1, _bgDark2]
+                : [AppPalette.backgroundLight, AppPalette.surfaceLight],
+            stops: const [0.0, 0.7],
           ),
         ),
         child: SafeArea(
@@ -380,7 +389,7 @@ class _ChatbotPageState extends State<ChatbotPage> {
                     final isTyping = chatProvider.isTyping;
 
                     if (messages.isEmpty && !isTyping) {
-                      return _buildEmptyState();
+                      return _buildEmptyState(isDark);
                     }
 
                     WidgetsBinding.instance
@@ -392,12 +401,12 @@ class _ChatbotPageState extends State<ChatbotPage> {
                       itemCount: messages.length + (isTyping ? 1 : 0),
                       itemBuilder: (context, index) {
                         if (index == messages.length && isTyping) {
-                          return _buildTypingIndicator();
+                          return _buildTypingIndicator(isDark);
                         }
                         final msg = messages[index];
                         final isUser = msg['role'] == 'user';
                         return _buildMessageBubble(
-                            msg['content']!, isUser, index);
+                            msg['content']!, isUser, index, isDark);
                       },
                     );
                   },
@@ -405,13 +414,13 @@ class _ChatbotPageState extends State<ChatbotPage> {
               ),
 
               // ── Voice Listening Bar ──
-              if (_isVoiceListening) _buildVoiceListeningBar(),
+              if (_isVoiceListening) _buildVoiceListeningBar(isDark),
 
               // ── Quick Suggestions ──
-              if (!_isVoiceListening) _buildQuickSuggestions(),
+              if (!_isVoiceListening) _buildQuickSuggestions(isDark),
 
               // ── Input Area ──
-              _buildInputArea(),
+              _buildInputArea(isDark),
             ],
           ),
         ),
@@ -441,7 +450,7 @@ class _ChatbotPageState extends State<ChatbotPage> {
     );
   }
 
-  Widget _buildMessageBubble(String content, bool isUser, int index) {
+  Widget _buildMessageBubble(String content, bool isUser, int index, bool isDark) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
@@ -485,7 +494,9 @@ class _ChatbotPageState extends State<ChatbotPage> {
                   constraints: BoxConstraints(
                       maxWidth: MediaQuery.of(context).size.width * 0.75),
                   decoration: BoxDecoration(
-                    color: isUser ? _userBubble.withOpacity(0.25) : _aiBubble,
+                    color: isUser 
+                        ? _userBubble.withOpacity(0.25) 
+                        : (isDark ? _aiBubble : AppPalette.cardLight),
                     borderRadius: BorderRadius.only(
                       topLeft: const Radius.circular(18),
                       topRight: const Radius.circular(18),
@@ -499,13 +510,13 @@ class _ChatbotPageState extends State<ChatbotPage> {
                     border: Border.all(
                       color: isUser
                           ? _userBubble.withOpacity(0.4)
-                          : Colors.white.withOpacity(0.08),
+                          : (isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.05)),
                     ),
                     boxShadow: [
                       BoxShadow(
                         color: isUser
                             ? _accentPurple.withOpacity(0.1)
-                            : Colors.black.withOpacity(0.2),
+                            : Colors.black.withOpacity(0.05),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -515,7 +526,7 @@ class _ChatbotPageState extends State<ChatbotPage> {
                       ? SelectableText(
                           content,
                           style: GoogleFonts.inter(
-                            color: Colors.white,
+                            color: isDark ? Colors.white : Colors.black87,
                             fontSize: 14,
                             height: 1.5,
                           ),
@@ -525,48 +536,48 @@ class _ChatbotPageState extends State<ChatbotPage> {
                           selectable: true,
                           styleSheet: MarkdownStyleSheet(
                             p: GoogleFonts.inter(
-                              color: const Color(0xFFE2E8F0),
+                              color: isDark ? const Color(0xFFE2E8F0) : AppPalette.textPrimaryLight,
                               fontSize: 14,
                               height: 1.6,
                             ),
                             h1: GoogleFonts.outfit(
-                              color: Colors.white,
+                              color: isDark ? Colors.white : Colors.black87,
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
                             ),
                             h2: GoogleFonts.outfit(
-                              color: Colors.white,
+                              color: isDark ? Colors.white : Colors.black87,
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                             ),
                             h3: GoogleFonts.outfit(
-                              color: Colors.white,
+                              color: isDark ? Colors.white : Colors.black87,
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                             ),
                             strong: GoogleFonts.inter(
-                              color: Colors.white,
+                              color: isDark ? Colors.white : Colors.black87,
                               fontWeight: FontWeight.w700,
                             ),
                             em: GoogleFonts.inter(
-                              color: const Color(0xFFCBD5E1),
+                              color: isDark ? const Color(0xFFCBD5E1) : AppPalette.textSecondaryLight,
                               fontStyle: FontStyle.italic,
                             ),
                             code: GoogleFonts.jetBrainsMono(
                               color: _accentTeal,
-                              backgroundColor: Colors.black.withOpacity(0.3),
+                              backgroundColor: isDark ? Colors.black.withOpacity(0.3) : Colors.black.withOpacity(0.05),
                               fontSize: 13,
                             ),
                             codeblockDecoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.4),
+                              color: isDark ? Colors.black.withOpacity(0.4) : Colors.black.withOpacity(0.05),
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(
-                                  color: Colors.white.withOpacity(0.08)),
+                                  color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.1)),
                             ),
                             codeblockPadding: const EdgeInsets.all(14),
                             listBullet: const TextStyle(color: _accentTeal),
                             blockquote: GoogleFonts.inter(
-                              color: const Color(0xFF94A3B8),
+                              color: isDark ? const Color(0xFF94A3B8) : AppPalette.textSecondaryLight,
                               fontStyle: FontStyle.italic,
                             ),
                             blockquoteDecoration: const BoxDecoration(
@@ -589,12 +600,12 @@ class _ChatbotPageState extends State<ChatbotPage> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(Icons.copy_rounded,
-                              size: 12, color: Colors.white.withOpacity(0.25)),
+                              size: 12, color: isDark ? Colors.white.withOpacity(0.25) : Colors.black.withOpacity(0.4)),
                           const SizedBox(width: 4),
                           Text('Copy',
                               style: GoogleFonts.inter(
                                   fontSize: 11,
-                                  color: Colors.white.withOpacity(0.25))),
+                                  color: isDark ? Colors.white.withOpacity(0.25) : Colors.black.withOpacity(0.4))),
                         ],
                       ),
                     ),
@@ -625,7 +636,7 @@ class _ChatbotPageState extends State<ChatbotPage> {
     ).animate().fadeIn(duration: 250.ms).slideY(begin: 0.1, end: 0);
   }
 
-  Widget _buildTypingIndicator() {
+  Widget _buildTypingIndicator(bool isDark) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -647,14 +658,14 @@ class _ChatbotPageState extends State<ChatbotPage> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
             decoration: BoxDecoration(
-              color: _aiBubble,
+              color: isDark ? _aiBubble : AppPalette.cardLight,
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(18),
                 topRight: Radius.circular(18),
                 bottomRight: Radius.circular(18),
                 bottomLeft: Radius.circular(4),
               ),
-              border: Border.all(color: Colors.white.withOpacity(0.08)),
+              border: Border.all(color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.05)),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -687,7 +698,7 @@ class _ChatbotPageState extends State<ChatbotPage> {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(bool isDark) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -733,7 +744,7 @@ class _ChatbotPageState extends State<ChatbotPage> {
             Text(
               'Study AI Assistant',
               style: GoogleFonts.outfit(
-                color: Colors.white,
+                color: isDark ? Colors.white : Colors.black87,
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
                 letterSpacing: -0.5,
@@ -743,7 +754,7 @@ class _ChatbotPageState extends State<ChatbotPage> {
             Text(
               'Your personal AI tutor powered by Gemini.\nAsk about study plans, exam prep, or any topic!',
               style: GoogleFonts.inter(
-                color: const Color(0xFF94A3B8),
+                color: isDark ? const Color(0xFF94A3B8) : AppPalette.textSecondaryLight,
                 fontSize: 14,
                 height: 1.6,
               ),
@@ -772,7 +783,7 @@ class _ChatbotPageState extends State<ChatbotPage> {
                   Text(
                     'Set your Gemini API key to get started',
                     style: GoogleFonts.inter(
-                      color: Colors.white.withOpacity(0.7),
+                      color: isDark ? Colors.white.withOpacity(0.7) : Colors.black.withOpacity(0.7),
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
                     ),
@@ -786,7 +797,7 @@ class _ChatbotPageState extends State<ChatbotPage> {
     );
   }
 
-  Widget _buildVoiceListeningBar() {
+  Widget _buildVoiceListeningBar(bool isDark) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -804,11 +815,11 @@ class _ChatbotPageState extends State<ChatbotPage> {
               .fadeIn(duration: 600.ms),
           const SizedBox(width: 10),
           Text('Listening...',
-              style: GoogleFonts.inter(color: Colors.white70, fontSize: 13)),
+              style: GoogleFonts.inter(color: isDark ? Colors.white70 : Colors.black54, fontSize: 13)),
           const Spacer(),
           Text(_controller.text,
               style: GoogleFonts.inter(
-                  color: Colors.white.withOpacity(0.6), fontSize: 12),
+                  color: isDark ? Colors.white.withOpacity(0.6) : Colors.black.withOpacity(0.6), fontSize: 12),
               maxLines: 1,
               overflow: TextOverflow.ellipsis),
         ],
@@ -816,7 +827,7 @@ class _ChatbotPageState extends State<ChatbotPage> {
     ).animate().fadeIn().slideY(begin: 0.3, end: 0);
   }
 
-  Widget _buildQuickSuggestions() {
+  Widget _buildQuickSuggestions(bool isDark) {
     final suggestions = [
       {'emoji': '📋', 'text': 'Create a study plan'},
       {'emoji': '🧠', 'text': 'How to memorize faster'},
@@ -845,12 +856,12 @@ class _ChatbotPageState extends State<ChatbotPage> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    Colors.white.withOpacity(0.08),
-                    Colors.white.withOpacity(0.04),
+                    isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.04),
+                    isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.02),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.white.withOpacity(0.1)),
+                border: Border.all(color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.1)),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -860,7 +871,7 @@ class _ChatbotPageState extends State<ChatbotPage> {
                   Text(
                     s['text']!,
                     style: GoogleFonts.inter(
-                      color: Colors.white.withOpacity(0.6),
+                      color: isDark ? Colors.white.withOpacity(0.6) : Colors.black.withOpacity(0.6),
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                     ),
@@ -874,13 +885,13 @@ class _ChatbotPageState extends State<ChatbotPage> {
     );
   }
 
-  Widget _buildInputArea() {
+  Widget _buildInputArea(bool isDark) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: _bgDark1.withOpacity(0.8),
+        color: isDark ? _bgDark1.withOpacity(0.8) : Colors.white.withOpacity(0.9),
         border: Border(
-          top: BorderSide(color: Colors.white.withOpacity(0.06)),
+          top: BorderSide(color: isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.08)),
         ),
       ),
       child: Consumer<ChatProvider>(
@@ -902,12 +913,12 @@ class _ChatbotPageState extends State<ChatbotPage> {
                           : null,
                       color: _isVoiceListening
                           ? null
-                          : Colors.white.withOpacity(0.08),
+                          : (isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.05)),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
                         color: _isVoiceListening
                             ? _accentPurple.withOpacity(0.5)
-                            : Colors.white.withOpacity(0.08),
+                            : (isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.1)),
                       ),
                     ),
                     child: Icon(
@@ -916,7 +927,7 @@ class _ChatbotPageState extends State<ChatbotPage> {
                           : Icons.mic_rounded,
                       color: _isVoiceListening
                           ? Colors.white
-                          : Colors.white.withOpacity(0.5),
+                          : (isDark ? Colors.white.withOpacity(0.5) : Colors.black.withOpacity(0.5)),
                       size: 20,
                     ),
                   ),
@@ -928,21 +939,24 @@ class _ChatbotPageState extends State<ChatbotPage> {
               Expanded(
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.06),
+                    color: isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.04),
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: Colors.white.withOpacity(0.08)),
+                    border: Border.all(color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.1)),
                   ),
                   child: TextField(
                     controller: _controller,
                     focusNode: _focusNode,
-                    style: GoogleFonts.inter(color: Colors.white, fontSize: 14),
+                    style: GoogleFonts.inter(
+                      color: isDark ? Colors.white : Colors.black87,
+                      fontSize: 14,
+                    ),
                     maxLines: 4,
                     minLines: 1,
                     textInputAction: TextInputAction.send,
                     decoration: InputDecoration(
                       hintText: "Ask about your studies...",
                       hintStyle: GoogleFonts.inter(
-                          color: Colors.white.withOpacity(0.25), fontSize: 14),
+                          color: isDark ? Colors.white.withOpacity(0.25) : Colors.black.withOpacity(0.4), fontSize: 14),
                       border: InputBorder.none,
                       isDense: true,
                       contentPadding: const EdgeInsets.symmetric(
@@ -973,7 +987,7 @@ class _ChatbotPageState extends State<ChatbotPage> {
                             ],
                           ),
                     color: chatProvider.isTyping
-                        ? Colors.white.withOpacity(0.06)
+                        ? (isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.08))
                         : null,
                     borderRadius: BorderRadius.circular(14),
                     boxShadow: chatProvider.isTyping
@@ -990,7 +1004,7 @@ class _ChatbotPageState extends State<ChatbotPage> {
                         ? Icons.hourglass_empty_rounded
                         : Icons.send_rounded,
                     color: chatProvider.isTyping
-                        ? Colors.white.withOpacity(0.3)
+                        ? (isDark ? Colors.white.withOpacity(0.3) : Colors.black.withOpacity(0.3))
                         : Colors.white,
                     size: 20,
                   ),

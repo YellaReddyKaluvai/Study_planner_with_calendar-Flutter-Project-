@@ -2,10 +2,15 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import '../domain/auth_repository.dart';
 import '../domain/user_entity.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
+  // Web OAuth client from Firebase project, used to request ID tokens on Android.
+  static const String _googleServerClientId =
+      '470707781599-djtekid7qlu22d75s8nc3lj7crmqpc4j.apps.googleusercontent.com';
+
   final FirebaseAuth _firebaseAuth;
   final GoogleSignIn _googleSignIn;
   final FirebaseFirestore _firestore;
@@ -15,7 +20,11 @@ class AuthRepositoryImpl implements AuthRepository {
     GoogleSignIn? googleSignIn,
     FirebaseFirestore? firestore,
   })  : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance,
-        _googleSignIn = googleSignIn ?? GoogleSignIn(),
+        _googleSignIn = googleSignIn ??
+            GoogleSignIn(
+              serverClientId: _googleServerClientId,
+              scopes: const ['email', 'profile'],
+            ),
         _firestore = firestore ?? FirebaseFirestore.instance;
 
   UserEntity _mapFirebaseUser(User? user) {
@@ -123,6 +132,9 @@ class AuthRepositoryImpl implements AuthRepository {
 
         return _mapFirebaseUser(userCredential.user);
       } else {
+        // Clear cached sessions to avoid stale/expired Google credentials.
+        await _googleSignIn.signOut();
+
         final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
         if (googleUser == null) {
           return UserEntity.empty();
@@ -130,6 +142,14 @@ class AuthRepositoryImpl implements AuthRepository {
 
         final GoogleSignInAuthentication googleAuth =
             await googleUser.authentication;
+
+        if (googleAuth.idToken == null || googleAuth.idToken!.isEmpty) {
+          throw FirebaseAuthException(
+            code: 'invalid-credential',
+            message:
+                'Google Sign-In did not return an ID token. Verify Firebase Android SHA fingerprints and OAuth configuration.',
+          );
+        }
 
         final OAuthCredential credential = GoogleAuthProvider.credential(
           accessToken: googleAuth.accessToken,
@@ -145,8 +165,17 @@ class AuthRepositoryImpl implements AuthRepository {
 
         return _mapFirebaseUser(userCredential.user);
       }
+    } on PlatformException catch (e) {
+      if (e.code == 'sign_in_failed' || e.code == '10') {
+        throw FirebaseAuthException(
+          code: 'invalid-credential',
+          message:
+              'Google Sign-In is misconfigured for this Android app (SHA-1/SHA-256 missing or outdated google-services.json).',
+        );
+      }
+      rethrow;
     } catch (e) {
-      print('Google Sign In Error: $e');
+      debugPrint('Google Sign In Error: $e');
       rethrow;
     }
   }
@@ -160,7 +189,7 @@ class AuthRepositoryImpl implements AuthRepository {
         await _googleSignIn.disconnect();
       }
     } catch (e) {
-      print('Google Sign Out Error: $e');
+      debugPrint('Google Sign Out Error: $e');
     }
     await _firebaseAuth.signOut();
   }

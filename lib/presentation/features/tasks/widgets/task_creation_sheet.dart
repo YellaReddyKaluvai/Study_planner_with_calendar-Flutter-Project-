@@ -62,6 +62,7 @@ class _TaskCreationSheetState extends State<TaskCreationSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : Colors.black87;
     final subtextColor = isDark ? Colors.white70 : Colors.black54;
@@ -71,259 +72,280 @@ class _TaskCreationSheetState extends State<TaskCreationSheet> {
     final handleColor = isDark ? Colors.white24 : Colors.grey.shade400;
 
     return GlassContainer(
-      margin: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
+      margin: const EdgeInsets.only(bottom: 8),
       borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: handleColor,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
+      child: SafeArea(
+        top: false,
+        child: AnimatedPadding(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOut,
+          padding: EdgeInsets.only(bottom: mediaQuery.viewInsets.bottom),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: mediaQuery.size.height * 0.9,
             ),
-            const SizedBox(height: 24),
-            // Header Row with QR button
-            Row(
-              children: [
-                Text(
-                  _isEditing ? "Edit Task" : "New Task",
-                  style: GoogleFonts.inter(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: textColor,
-                  ),
-                ),
-                const Spacer(),
-                if (!_isEditing)
-                  TextButton.icon(
-                    onPressed: _openQrScan,
-                    icon: const Icon(Icons.qr_code_scanner,
-                        color: AppTheme.primary, size: 18),
-                    label: const Text('Import QR',
-                        style:
-                            TextStyle(color: AppTheme.primary, fontSize: 12)),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: handleColor,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
                     ),
                   ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // Title Input
-            TextField(
-              controller: _titleController,
-              autofocus: !_isEditing,
-              style: TextStyle(color: textColor, fontSize: 18),
-              onChanged: (_) {
-                if (_titleError != null) setState(() => _titleError = null);
-              },
-              decoration: InputDecoration(
-                hintText: "What do you need to do?",
-                hintStyle: TextStyle(color: hintColor),
-                border: InputBorder.none,
-                errorText: _titleError,
-                errorStyle:
-                    const TextStyle(color: Colors.redAccent, fontSize: 11),
-              ),
-            ),
-
-            Divider(color: dividerColor),
-
-            // Notes Input
-            TextField(
-              controller: _notesController,
-              style: TextStyle(color: subtextColor, fontSize: 14),
-              maxLines: 3,
-              minLines: 1,
-              decoration: InputDecoration(
-                hintText: "Add notes, subtasks, or links...",
-                hintStyle: TextStyle(color: hintColor),
-                border: InputBorder.none,
-                prefixIcon: Icon(Icons.notes, color: hintColor, size: 20),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Options Row
-            Row(
-              children: [
-                // Date & Time Pickers
-                Expanded(
-                  child: Row(
+                  const SizedBox(height: 24),
+                  // Header Row with QR button
+                  Row(
                     children: [
+                      Text(
+                        _isEditing ? "Edit Task" : "New Task",
+                        style: GoogleFonts.inter(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: textColor,
+                        ),
+                      ),
+                      const Spacer(),
+                      if (!_isEditing)
+                        Flexible(
+                          child: TextButton.icon(
+                            onPressed: _openQrScan,
+                            icon: const Icon(Icons.qr_code_scanner,
+                                color: AppTheme.primary, size: 18),
+                            label: const Text(
+                              'Import QR',
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                  color: AppTheme.primary, fontSize: 12),
+                            ),
+                            style: TextButton.styleFrom(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 8),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Title Input
+                  TextField(
+                    controller: _titleController,
+                    autofocus: !_isEditing,
+                    style: TextStyle(color: textColor, fontSize: 18),
+                    onChanged: (_) {
+                      if (_titleError != null)
+                        setState(() => _titleError = null);
+                    },
+                    decoration: InputDecoration(
+                      hintText: "What do you need to do?",
+                      hintStyle: TextStyle(color: hintColor),
+                      border: InputBorder.none,
+                      errorText: _titleError,
+                      errorStyle: const TextStyle(
+                          color: Colors.redAccent, fontSize: 11),
+                    ),
+                  ),
+
+                  Divider(color: dividerColor),
+
+                  // Notes Input
+                  TextField(
+                    controller: _notesController,
+                    style: TextStyle(color: subtextColor, fontSize: 14),
+                    maxLines: 3,
+                    minLines: 1,
+                    decoration: InputDecoration(
+                      hintText: "Add notes, subtasks, or links...",
+                      hintStyle: TextStyle(color: hintColor),
+                      border: InputBorder.none,
+                      prefixIcon: Icon(Icons.notes, color: hintColor, size: 20),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Options Row
+                  Row(
+                    children: [
+                      // Date & Time Pickers
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        child: Row(
                           children: [
-                            Text("Start",
-                                style: TextStyle(
-                                    color: subtextColor, fontSize: 12)),
-                            ActionChip(
-                              padding: EdgeInsets.zero,
-                              label: Text(
-                                "${_startTime.day}/${_startTime.month} ${_startTime.hour}:${_startTime.minute.toString().padLeft(2, '0')}",
-                                style: TextStyle(color: textColor),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text("Start",
+                                      style: TextStyle(
+                                          color: subtextColor, fontSize: 12)),
+                                  ActionChip(
+                                    padding: EdgeInsets.zero,
+                                    label: Text(
+                                      "${_startTime.day}/${_startTime.month} ${_startTime.hour}:${_startTime.minute.toString().padLeft(2, '0')}",
+                                      style: TextStyle(color: textColor),
+                                    ),
+                                    backgroundColor: chipBg,
+                                    side: BorderSide.none,
+                                    onPressed: () => _pickDateTime(true),
+                                  ),
+                                ],
                               ),
-                              backgroundColor: chipBg,
-                              side: BorderSide.none,
-                              onPressed: () => _pickDateTime(true),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text("End",
+                                      style: TextStyle(
+                                          color: subtextColor, fontSize: 12)),
+                                  ActionChip(
+                                    padding: EdgeInsets.zero,
+                                    label: Text(
+                                      "${_endTime.day}/${_endTime.month} ${_endTime.hour}:${_endTime.minute.toString().padLeft(2, '0')}",
+                                      style: TextStyle(color: textColor),
+                                    ),
+                                    backgroundColor: chipBg,
+                                    side: BorderSide.none,
+                                    onPressed: () => _pickDateTime(false),
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ),
                       ),
                       const SizedBox(width: 8),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text("End",
-                                style: TextStyle(
-                                    color: subtextColor, fontSize: 12)),
-                            ActionChip(
-                              padding: EdgeInsets.zero,
-                              label: Text(
-                                "${_endTime.day}/${_endTime.month} ${_endTime.hour}:${_endTime.minute.toString().padLeft(2, '0')}",
-                                style: TextStyle(color: textColor),
+
+                      // Color Picker
+                      DropdownButtonHideUnderline(
+                        child: DropdownButton<Color>(
+                          value: _selectedColor,
+                          dropdownColor: AppTheme.surface,
+                          icon: const Icon(Icons.circle, size: 12),
+                          items: _colors.map((color) {
+                            return DropdownMenuItem(
+                              value: color,
+                              child: Container(
+                                width: 20,
+                                height: 20,
+                                decoration: BoxDecoration(
+                                    color: color, shape: BoxShape.circle),
                               ),
-                              backgroundColor: chipBg,
-                              side: BorderSide.none,
-                              onPressed: () => _pickDateTime(false),
-                            ),
-                          ],
+                            );
+                          }).toList(),
+                          onChanged: (color) {
+                            if (color != null)
+                              setState(() => _selectedColor = color);
+                          },
                         ),
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(width: 8),
 
-                // Color Picker
-                DropdownButtonHideUnderline(
-                  child: DropdownButton<Color>(
-                    value: _selectedColor,
-                    dropdownColor: AppTheme.surface,
-                    icon: const Icon(Icons.circle, size: 12),
-                    items: _colors.map((color) {
-                      return DropdownMenuItem(
-                        value: color,
-                        child: Container(
-                          width: 20,
-                          height: 20,
-                          decoration: BoxDecoration(
-                              color: color, shape: BoxShape.circle),
-                        ),
-                      );
-                    }).toList(),
-                    onChanged: (color) {
-                      if (color != null) setState(() => _selectedColor = color);
-                    },
+                  const SizedBox(height: 16),
+
+                  // Priority Selector
+                  Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      Text("Priority:", style: TextStyle(color: subtextColor)),
+                      ...[1, 2, 3].map((priority) {
+                        final isSelected = _selectedPriority == priority;
+                        String label = priority == 1
+                            ? "High"
+                            : (priority == 2 ? "Med" : "Low");
+                        Color color = priority == 1
+                            ? Colors.redAccent
+                            : (priority == 2
+                                ? Colors.orangeAccent
+                                : Colors.greenAccent);
+
+                        return ChoiceChip(
+                          label: Text(label),
+                          selected: isSelected,
+                          onSelected: (selected) {
+                            setState(() => _selectedPriority = priority);
+                          },
+                          backgroundColor: chipBg,
+                          selectedColor: color.withOpacity(0.2),
+                          labelStyle: TextStyle(
+                            color: isSelected ? color : subtextColor,
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            side: BorderSide(
+                              color: isSelected ? color : Colors.transparent,
+                            ),
+                          ),
+                        );
+                      }),
+                    ],
                   ),
-                ),
-              ],
-            ),
 
-            const SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
-            // Priority Selector
-            Wrap(
-              crossAxisAlignment: WrapCrossAlignment.center,
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                Text("Priority:", style: TextStyle(color: subtextColor)),
-                ...[1, 2, 3].map((priority) {
-                  final isSelected = _selectedPriority == priority;
-                  String label = priority == 1
-                      ? "High"
-                      : (priority == 2 ? "Med" : "Low");
-                  Color color = priority == 1
-                      ? Colors.redAccent
-                      : (priority == 2
-                          ? Colors.orangeAccent
-                          : Colors.greenAccent);
-
-                  return ChoiceChip(
-                    label: Text(label),
-                    selected: isSelected,
-                    onSelected: (selected) {
-                      setState(() => _selectedPriority = priority);
-                    },
-                    backgroundColor: chipBg,
-                    selectedColor: color.withOpacity(0.2),
-                    labelStyle: TextStyle(
-                      color: isSelected ? color : subtextColor,
-                      fontWeight:
-                          isSelected ? FontWeight.bold : FontWeight.normal,
+                  // Category Dropdown
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? Colors.white.withOpacity(0.05)
+                          : Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                      side: BorderSide(
-                        color: isSelected ? color : Colors.transparent,
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: _selectedCategory,
+                        dropdownColor:
+                            isDark ? const Color(0xFF1E2433) : Colors.white,
+                        isExpanded: true,
+                        icon: Icon(Icons.keyboard_arrow_down,
+                            color: subtextColor),
+                        items: ['Study', 'Assignment', 'Exam', 'Other']
+                            .map((String category) {
+                          return DropdownMenuItem<String>(
+                            value: category.toLowerCase(),
+                            child: Text(
+                              category,
+                              style: TextStyle(color: textColor),
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            _selectedCategory = newValue!;
+                          });
+                        },
                       ),
                     ),
-                  );
-                }),
-              ],
-            ),
+                  ),
 
-            const SizedBox(height: 16),
+                  const SizedBox(height: 24),
 
-            // Category Dropdown
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              decoration: BoxDecoration(
-                color: isDark
-                    ? Colors.white.withOpacity(0.05)
-                    : Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: _selectedCategory,
-                  dropdownColor:
-                      isDark ? const Color(0xFF1E2433) : Colors.white,
-                  isExpanded: true,
-                  icon: Icon(Icons.keyboard_arrow_down, color: subtextColor),
-                  items: ['Study', 'Assignment', 'Exam', 'Other']
-                      .map((String category) {
-                    return DropdownMenuItem<String>(
-                      value: category.toLowerCase(),
-                      child: Text(
-                        category,
-                        style: TextStyle(color: textColor),
-                      ),
-                    );
-                  }).toList(),
-                  onChanged: (String? newValue) {
-                    setState(() {
-                      _selectedCategory = newValue!;
-                    });
-                  },
-                ),
+                  // Create / Update Button with Animation
+                  _AnimatedCreateButton(
+                    onPressed: _submit,
+                    label: _isEditing ? "Update Task" : "Create Task",
+                    isEditing: _isEditing,
+                  ),
+                ],
               ),
             ),
-
-            const SizedBox(height: 24),
-
-            // Create / Update Button with Animation
-            _AnimatedCreateButton(
-              onPressed: _submit,
-              label: _isEditing ? "Update Task" : "Create Task",
-              isEditing: _isEditing,
-            ),
-          ],
+          ),
         ),
       ),
     );

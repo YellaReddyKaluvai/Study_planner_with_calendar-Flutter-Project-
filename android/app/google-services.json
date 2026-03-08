@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "470707781599-c4ckrpc1t6c8rpmsuopmpor2u5p4b92p.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.study_planner_with_calendar",
+            "certificate_hash": "b3b5e52b5cce7c1f59c9c92d41f54e8b9f80f97e"
+          }
+        },
+        {
           "client_id": "470707781599-djtekid7qlu22d75s8nc3lj7crmqpc4j.apps.googleusercontent.com",
           "client_type": 3
         }
