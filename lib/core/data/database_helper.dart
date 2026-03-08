@@ -1,12 +1,17 @@
+import 'dart:convert';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../domain/entities/task.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
   static Database? _database;
   static bool? _isWebOverride; // For testing
+
+  // SharedPreferences key for web fallback
+  static const String _webTasksKey = 'local_tasks_store';
 
   DatabaseHelper._init();
 
@@ -15,7 +20,7 @@ class DatabaseHelper {
   Future<Database?> get database async {
     if (_isWeb) return null;
     if (_database != null) return _database!;
-    _database = await _initDB('study_planner.db');
+    _database = await _initDB('study_planner_tasks.db');
     return _database!;
   }
 
@@ -41,8 +46,6 @@ class DatabaseHelper {
       }
     }
     if (oldVersion < 3) {
-      // preparationPlan was NOT NULL but should be nullable
-      // SQLite doesn't support DROP COLUMN in old versions, so we recreate
       try {
         await db.execute('''
           CREATE TABLE IF NOT EXISTS tasks_new (
@@ -74,7 +77,7 @@ class DatabaseHelper {
     const boolType = 'INTEGER NOT NULL';
     const integerType = 'INTEGER NOT NULL';
 
-    // Tasks Table - preparationPlan is nullable (AI plan generated async)
+    // Tasks Table
     await db.execute('''
 CREATE TABLE tasks (
   id $idType,
@@ -101,7 +104,7 @@ CREATE TABLE chat_messages (
 )
 ''');
 
-    // Key-Value Store for simple settings (API Key, etc)
+    // Key-Value Store for simple settings
     await db.execute('''
 CREATE TABLE settings (
   key $textType PRIMARY KEY,
@@ -110,9 +113,46 @@ CREATE TABLE settings (
 ''');
   }
 
-  // --- Task Operations ---
+  // ═══════════════════════════════════════════════════════════════
+  // Web fallback helpers (SharedPreferences JSON store)
+  // ═══════════════════════════════════════════════════════════════
+
+  Future<List<Map<String, dynamic>>> _loadWebTasks() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_webTasksKey);
+      if (raw == null || raw.isEmpty) return [];
+      final decoded = jsonDecode(raw);
+      return List<Map<String, dynamic>>.from(
+        (decoded as List).map((e) => Map<String, dynamic>.from(e)),
+      );
+    } catch (e) {
+      debugPrint("Error loading web tasks: $e");
+      return [];
+    }
+  }
+
+  Future<void> _saveWebTasks(List<Map<String, dynamic>> tasks) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_webTasksKey, jsonEncode(tasks));
+    } catch (e) {
+      debugPrint("Error saving web tasks: $e");
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // Task Operations (with web fallback)
+  // ═══════════════════════════════════════════════════════════════
 
   Future<int> createTask(Task task) async {
+    if (_isWeb) {
+      final tasks = await _loadWebTasks();
+      tasks.removeWhere((t) => t['id'] == task.id);
+      tasks.add(task.toMap());
+      await _saveWebTasks(tasks);
+      return 1;
+    }
     final db = await instance.database;
     if (db == null) return 0;
     return await db.insert(
@@ -123,6 +163,14 @@ CREATE TABLE settings (
   }
 
   Future<Task> readTask(String id) async {
+    if (_isWeb) {
+      final tasks = await _loadWebTasks();
+      final match = tasks.where((t) => t['id'] == id).toList();
+      if (match.isNotEmpty) {
+        return Task.fromMap(match.first);
+      }
+      throw Exception('ID $id not found');
+    }
     final db = await instance.database;
     if (db == null) throw Exception('Database not available on Web');
     final maps = await db.query(
@@ -140,6 +188,10 @@ CREATE TABLE settings (
   }
 
   Future<List<Task>> readAllTasks() async {
+    if (_isWeb) {
+      final tasks = await _loadWebTasks();
+      return tasks.map((json) => Task.fromMap(json)).toList();
+    }
     final db = await instance.database;
     if (db == null) return [];
     final result = await db.query('tasks');
@@ -147,6 +199,17 @@ CREATE TABLE settings (
   }
 
   Future<int> updateTask(Task task) async {
+    if (_isWeb) {
+      final tasks = await _loadWebTasks();
+      final index = tasks.indexWhere((t) => t['id'] == task.id);
+      if (index != -1) {
+        tasks[index] = task.toMap();
+      } else {
+        tasks.add(task.toMap());
+      }
+      await _saveWebTasks(tasks);
+      return 1;
+    }
     final db = await instance.database;
     if (db == null) return 0;
     return db.update(
@@ -158,6 +221,12 @@ CREATE TABLE settings (
   }
 
   Future<int> deleteTask(String id) async {
+    if (_isWeb) {
+      final tasks = await _loadWebTasks();
+      tasks.removeWhere((t) => t['id'] == id);
+      await _saveWebTasks(tasks);
+      return 1;
+    }
     final db = await instance.database;
     if (db == null) return 0;
     return await db.delete(

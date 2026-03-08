@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../providers/task_provider.dart';
+import '../../providers/navigation_provider.dart';
 import '../../../../domain/entities/task.dart';
 import '../tasks/widgets/task_creation_sheet.dart';
 
@@ -42,10 +43,31 @@ class _CalendarPageState extends State<CalendarPage>
       duration: const Duration(milliseconds: 300),
     );
     _headerAnimController.forward();
+
+    // Listen for tab changes to reset to today when calendar tab becomes active
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final navProvider = Provider.of<NavigationProvider>(context, listen: false);
+      navProvider.addListener(_onTabChanged);
+    });
+  }
+
+  void _onTabChanged() {
+    final navProvider = Provider.of<NavigationProvider>(context, listen: false);
+    // Calendar tab is index 1
+    if (navProvider.currentIndex == 1 && mounted) {
+      final now = DateTime.now();
+      _calendarController.displayDate = now;
+      setState(() => _displayedDate = now);
+    }
   }
 
   @override
   void dispose() {
+    // Remove the navigation listener
+    try {
+      final navProvider = Provider.of<NavigationProvider>(context, listen: false);
+      navProvider.removeListener(_onTabChanged);
+    } catch (_) {}
     _headerAnimController.dispose();
     _calendarController.dispose();
     super.dispose();
@@ -110,8 +132,8 @@ class _CalendarPageState extends State<CalendarPage>
                       backgroundColor: surfaceColor,
                       dataSource: TaskDataSource(taskProvider.tasks),
                       allowViewNavigation: true,
-                      allowAppointmentResize: true,
-                      allowDragAndDrop: true,
+                      allowAppointmentResize: false,
+                      allowDragAndDrop: false,
                       showNavigationArrow: false,
                       showDatePickerButton: false,
                       headerHeight: 0,
@@ -266,6 +288,7 @@ class _CalendarPageState extends State<CalendarPage>
                           );
                         }
                       },
+
                     ),
                   ),
                 ),
@@ -497,15 +520,17 @@ class _CalendarPageState extends State<CalendarPage>
                         color: isSelected ? _teamsPurple : mutedText,
                       ),
                       const SizedBox(width: 4),
-                      Text(
-                        v['label'] as String,
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          fontWeight:
-                              isSelected ? FontWeight.w700 : FontWeight.w500,
-                          color: isSelected ? _teamsPurple : mutedText,
+                      Flexible(
+                        child: Text(
+                          v['label'] as String,
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight:
+                                isSelected ? FontWeight.w700 : FontWeight.w500,
+                            color: isSelected ? _teamsPurple : mutedText,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
@@ -583,10 +608,12 @@ class _CalendarPageState extends State<CalendarPage>
       CalendarAppointmentDetails details, bool isDark, Color textColor) {
     final task = details.appointments.first as Task;
     final isCompleted = task.isCompleted;
+    final w = details.bounds.width;
+    final h = details.bounds.height;
 
-    // Teams left-border color strip card
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 1),
+      width: w,
+      height: h,
       decoration: BoxDecoration(
         color: isDark
             ? task.color.withOpacity(0.18)
@@ -598,27 +625,20 @@ class _CalendarPageState extends State<CalendarPage>
             width: 4,
           ),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: task.color.withOpacity(0.08),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-          ),
-        ],
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      clipBehavior: Clip.hardEdge,
+      padding: const EdgeInsets.only(left: 4, right: 4, top: 2, bottom: 2),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             children: [
               if (isCompleted)
                 Padding(
-                  padding: const EdgeInsets.only(right: 4),
+                  padding: const EdgeInsets.only(right: 3),
                   child: Icon(
                     Icons.check_circle,
-                    size: 13,
+                    size: 11,
                     color: task.color.withOpacity(0.6),
                   ),
                 ),
@@ -628,7 +648,7 @@ class _CalendarPageState extends State<CalendarPage>
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.inter(
-                    fontSize: 12,
+                    fontSize: 11,
                     fontWeight: FontWeight.w600,
                     color: isCompleted
                         ? (isDark ? Colors.white54 : Colors.black38)
@@ -639,41 +659,41 @@ class _CalendarPageState extends State<CalendarPage>
               ),
             ],
           ),
-          if (details.bounds.height > 36)
-            Padding(
-              padding: const EdgeInsets.only(top: 2),
-              child: Text(
-                '${_formatTime(task.startTime)} – ${_formatTime(task.endTime)}',
-                style: GoogleFonts.inter(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w400,
-                  color: isDark ? Colors.white38 : const Color(0xFF999999),
-                ),
+          if (h > 36)
+            Text(
+              '${_formatTime(task.startTime)} – ${_formatTime(task.endTime)}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.inter(
+                fontSize: 10,
+                fontWeight: FontWeight.w400,
+                color: isDark ? Colors.white38 : const Color(0xFF999999),
               ),
             ),
-          if (details.bounds.height > 56)
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Row(
-                children: [
-                  Container(
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: task.color,
-                      shape: BoxShape.circle,
-                    ),
+          if (h > 56)
+            Row(
+              children: [
+                Container(
+                  width: 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: task.color,
+                    shape: BoxShape.circle,
                   ),
-                  const SizedBox(width: 4),
-                  Text(
+                ),
+                const SizedBox(width: 4),
+                Flexible(
+                  child: Text(
                     task.type,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.inter(
                       fontSize: 10,
                       color: isDark ? Colors.white30 : const Color(0xFFAAAAAA),
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
         ],
       ),
