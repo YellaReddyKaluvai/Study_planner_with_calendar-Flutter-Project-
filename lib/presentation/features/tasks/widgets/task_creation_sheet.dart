@@ -237,45 +237,44 @@ class _TaskCreationSheetState extends State<TaskCreationSheet> {
             const SizedBox(height: 16),
 
             // Priority Selector
-            Row(
+            Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
+              runSpacing: 8,
               children: [
                 Text("Priority:", style: TextStyle(color: subtextColor)),
-                const SizedBox(width: 12),
-                Wrap(
-                  spacing: 8,
-                  children: [1, 2, 3].map((priority) {
-                    final isSelected = _selectedPriority == priority;
-                    String label = priority == 1
-                        ? "High"
-                        : (priority == 2 ? "Med" : "Low");
-                    Color color = priority == 1
-                        ? Colors.redAccent
-                        : (priority == 2
-                            ? Colors.orangeAccent
-                            : Colors.greenAccent);
+                ...[1, 2, 3].map((priority) {
+                  final isSelected = _selectedPriority == priority;
+                  String label = priority == 1
+                      ? "High"
+                      : (priority == 2 ? "Med" : "Low");
+                  Color color = priority == 1
+                      ? Colors.redAccent
+                      : (priority == 2
+                          ? Colors.orangeAccent
+                          : Colors.greenAccent);
 
-                    return ChoiceChip(
-                      label: Text(label),
-                      selected: isSelected,
-                      onSelected: (selected) {
-                        setState(() => _selectedPriority = priority);
-                      },
-                      backgroundColor: chipBg,
-                      selectedColor: color.withOpacity(0.2),
-                      labelStyle: TextStyle(
-                        color: isSelected ? color : subtextColor,
-                        fontWeight:
-                            isSelected ? FontWeight.bold : FontWeight.normal,
+                  return ChoiceChip(
+                    label: Text(label),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      setState(() => _selectedPriority = priority);
+                    },
+                    backgroundColor: chipBg,
+                    selectedColor: color.withOpacity(0.2),
+                    labelStyle: TextStyle(
+                      color: isSelected ? color : subtextColor,
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.normal,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                      side: BorderSide(
+                        color: isSelected ? color : Colors.transparent,
                       ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        side: BorderSide(
-                          color: isSelected ? color : Colors.transparent,
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
+                    ),
+                  );
+                }),
               ],
             ),
 

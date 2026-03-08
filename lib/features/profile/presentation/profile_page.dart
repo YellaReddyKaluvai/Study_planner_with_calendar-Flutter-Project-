@@ -12,6 +12,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/theme_provider.dart';
 import '../../../core/theme/language_provider.dart';
 import '../../../core/theme/app_strings.dart';
+import '../../../core/widgets/platform_image.dart';
 import '../../auth/presentation/auth_notifier.dart';
 
 import 'profile_notifier.dart';
@@ -627,19 +628,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                                 child: user.photoUrl != null &&
                                         user.photoUrl!.isNotEmpty
                                     ? ClipOval(
-                                        child: CachedNetworkImage(
-                                          imageUrl: user.photoUrl!,
+                                        child: platformNetworkImage(
+                                          user.photoUrl!,
                                           width: 88,
                                           height: 88,
                                           fit: BoxFit.cover,
-                                          errorWidget: (_, __, ___) => Text(
-                                            user.displayName?[0]
-                                                    .toUpperCase() ??
-                                                'U',
-                                            style: GoogleFonts.outfit(
-                                                fontSize: 38,
-                                                color: Colors.white),
-                                          ),
                                         ),
                                       )
                                     : Text(

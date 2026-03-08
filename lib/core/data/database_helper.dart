@@ -12,6 +12,8 @@ class DatabaseHelper {
 
   // SharedPreferences key for web fallback
   static const String _webTasksKey = 'local_tasks_store';
+  static const String _webChatKey = 'local_chat_history_store';
+  static const String _webSettingsKey = 'local_settings_store';
 
   DatabaseHelper._init();
 
@@ -141,6 +143,50 @@ CREATE TABLE settings (
     }
   }
 
+  Future<List<Map<String, dynamic>>> _loadWebChatHistory() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_webChatKey);
+      if (raw == null || raw.isEmpty) return [];
+      final decoded = jsonDecode(raw) as List;
+      return decoded.map((e) => Map<String, dynamic>.from(e)).toList();
+    } catch (e) {
+      debugPrint("Error loading web chat history: $e");
+      return [];
+    }
+  }
+
+  Future<void> _saveWebChatHistory(List<Map<String, dynamic>> messages) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_webChatKey, jsonEncode(messages));
+    } catch (e) {
+      debugPrint("Error saving web chat history: $e");
+    }
+  }
+
+  Future<Map<String, String>> _loadWebSettings() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_webSettingsKey);
+      if (raw == null || raw.isEmpty) return {};
+      final decoded = Map<String, dynamic>.from(jsonDecode(raw));
+      return decoded.map((key, value) => MapEntry(key, value.toString()));
+    } catch (e) {
+      debugPrint("Error loading web settings: $e");
+      return {};
+    }
+  }
+
+  Future<void> _saveWebSettings(Map<String, String> settings) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_webSettingsKey, jsonEncode(settings));
+    } catch (e) {
+      debugPrint("Error saving web settings: $e");
+    }
+  }
+
   // ═══════════════════════════════════════════════════════════════
   // Task Operations (with web fallback)
   // ═══════════════════════════════════════════════════════════════
@@ -239,18 +285,35 @@ CREATE TABLE settings (
   // --- Chat Operations ---
 
   Future<int> saveMessage(Map<String, dynamic> message) async {
+    if (_isWeb) {
+      final messages = await _loadWebChatHistory();
+      messages.add(message);
+      await _saveWebChatHistory(messages);
+      return 1;
+    }
+
     final db = await instance.database;
     if (db == null) return 0;
     return await db.insert('chat_messages', message);
   }
 
   Future<List<Map<String, dynamic>>> getChatHistory() async {
+    if (_isWeb) {
+      return await _loadWebChatHistory();
+    }
+
     final db = await instance.database;
     if (db == null) return [];
     return await db.query('chat_messages', orderBy: 'timestamp ASC');
   }
 
   Future<void> clearChatHistory() async {
+    if (_isWeb) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_webChatKey);
+      return;
+    }
+
     final db = await instance.database;
     if (db == null) return;
     await db.delete('chat_messages');
@@ -259,13 +322,28 @@ CREATE TABLE settings (
   // --- Settings Operations ---
 
   Future<void> saveSetting(String key, String value) async {
+    if (_isWeb) {
+      final settings = await _loadWebSettings();
+      settings[key] = value;
+      await _saveWebSettings(settings);
+      return;
+    }
+
     final db = await instance.database;
     if (db == null) return;
-    await db.insert('settings', {'key': key, 'value': value},
-        conflictAlgorithm: ConflictAlgorithm.replace);
+    await db.insert(
+      'settings',
+      {'key': key, 'value': value},
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
   }
 
   Future<String?> getSetting(String key) async {
+    if (_isWeb) {
+      final settings = await _loadWebSettings();
+      return settings[key];
+    }
+
     final db = await instance.database;
     if (db == null) return null;
     final maps = await db.query(
@@ -274,6 +352,7 @@ CREATE TABLE settings (
       where: 'key = ?',
       whereArgs: [key],
     );
+
     if (maps.isNotEmpty) {
       return maps.first['value'] as String;
     }

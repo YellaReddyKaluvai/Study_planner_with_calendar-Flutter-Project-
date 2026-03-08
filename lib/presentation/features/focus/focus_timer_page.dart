@@ -382,96 +382,99 @@ class _FocusTimerPageState extends State<FocusTimerPage>
               const SizedBox(height: 24),
 
               // MM : SS picker
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Minutes
-                  Column(
-                    children: [
-                      Text('Min',
-                          style: GoogleFonts.outfit(
-                              color: Colors.white54, fontSize: 12)),
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.remove_circle_outline,
-                                color: Colors.white54),
-                            onPressed: () => setDialogState(
-                                () => minutes = (minutes - 1).clamp(0, 180)),
-                          ),
-                          SizedBox(
-                            width: 44,
-                            child: Text(
-                              minutes.toString().padLeft(2, '0'),
-                              textAlign: TextAlign.center,
-                              style: GoogleFonts.outfit(
-                                fontSize: 32,
-                                fontWeight: FontWeight.bold,
-                                color: const Color(0xFF00F0FF),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Minutes
+                    Column(
+                      children: [
+                        Text('Min',
+                            style: GoogleFonts.outfit(
+                                color: Colors.white54, fontSize: 12)),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.remove_circle_outline,
+                                  color: Colors.white54),
+                              onPressed: () => setDialogState(
+                                  () => minutes = (minutes - 1).clamp(0, 180)),
+                            ),
+                            SizedBox(
+                              width: 44,
+                              child: Text(
+                                minutes.toString().padLeft(2, '0'),
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.outfit(
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFF00F0FF),
+                                ),
                               ),
                             ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.add_circle_outline,
-                                color: Colors.white54),
-                            onPressed: () => setDialogState(
-                                () => minutes = (minutes + 1).clamp(0, 180)),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-
-                  Padding(
-                    padding: const EdgeInsets.only(top: 18),
-                    child: Text(
-                      ':',
-                      style: GoogleFonts.outfit(
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white54),
+                            IconButton(
+                              icon: const Icon(Icons.add_circle_outline,
+                                  color: Colors.white54),
+                              onPressed: () => setDialogState(
+                                  () => minutes = (minutes + 1).clamp(0, 180)),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                  ),
 
-                  // Seconds (steps of 5)
-                  Column(
-                    children: [
-                      Text('Sec',
-                          style: GoogleFonts.outfit(
-                              color: Colors.white54, fontSize: 12)),
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.remove_circle_outline,
-                                color: Colors.white54),
-                            onPressed: () => setDialogState(
-                                () => seconds = (seconds - 5).clamp(0, 55)),
-                          ),
-                          SizedBox(
-                            width: 44,
-                            child: Text(
-                              seconds.toString().padLeft(2, '0'),
-                              textAlign: TextAlign.center,
-                              style: GoogleFonts.outfit(
-                                fontSize: 32,
-                                fontWeight: FontWeight.bold,
-                                color: const Color(0xFF00F0FF),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 18),
+                      child: Text(
+                        ':',
+                        style: GoogleFonts.outfit(
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white54),
+                      ),
+                    ),
+
+                    // Seconds (steps of 5)
+                    Column(
+                      children: [
+                        Text('Sec',
+                            style: GoogleFonts.outfit(
+                                color: Colors.white54, fontSize: 12)),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.remove_circle_outline,
+                                  color: Colors.white54),
+                              onPressed: () => setDialogState(
+                                  () => seconds = (seconds - 5).clamp(0, 55)),
+                            ),
+                            SizedBox(
+                              width: 44,
+                              child: Text(
+                                seconds.toString().padLeft(2, '0'),
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.outfit(
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFF00F0FF),
+                                ),
                               ),
                             ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.add_circle_outline,
-                                color: Colors.white54),
-                            onPressed: () => setDialogState(
-                                () => seconds = (seconds + 5).clamp(0, 55)),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ],
+                            IconButton(
+                              icon: const Icon(Icons.add_circle_outline,
+                                  color: Colors.white54),
+                              onPressed: () => setDialogState(
+                                  () => seconds = (seconds + 5).clamp(0, 55)),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
 
               const SizedBox(height: 12),

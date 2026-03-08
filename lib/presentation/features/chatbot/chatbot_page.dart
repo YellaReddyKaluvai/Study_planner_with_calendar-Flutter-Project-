@@ -215,31 +215,34 @@ class _ChatbotPageState extends State<ChatbotPage> {
                         ],
                       ),
                       child: TextButton(
-                        onPressed: () {
-                          if (keyController.text.isNotEmpty) {
-                            context
-                                .read<ChatProvider>()
-                                .setApiKey(keyController.text.trim());
-                            Navigator.pop(context);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Row(
-                                  children: [
-                                    const Icon(Icons.check_circle,
-                                        color: Colors.white, size: 18),
-                                    const SizedBox(width: 8),
-                                    Text('API Key saved successfully!',
-                                        style: GoogleFonts.inter()),
-                                  ],
-                                ),
-                                backgroundColor: _accentTeal,
-                                behavior: SnackBarBehavior.floating,
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12)),
-                                duration: const Duration(seconds: 2),
+                        onPressed: () async {
+                          if (keyController.text.trim().isEmpty) return;
+
+                          await context
+                              .read<ChatProvider>()
+                              .setApiKey(keyController.text.trim());
+
+                          if (!mounted) return;
+
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Row(
+                                children: [
+                                  const Icon(Icons.check_circle,
+                                      color: Colors.white, size: 18),
+                                  const SizedBox(width: 8),
+                                  Text('API Key saved successfully!',
+                                      style: GoogleFonts.inter()),
+                                ],
                               ),
-                            );
-                          }
+                              backgroundColor: _accentTeal,
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12)),
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
                         },
                         style: TextButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 14),

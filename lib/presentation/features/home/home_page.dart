@@ -304,12 +304,18 @@ class HomePage extends StatelessWidget {
         borderRadius: BorderRadius.circular(50),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            _NavBarIcon(
-                icon: Icons.home_filled, index: 0, provider: navProvider),
-            _NavBarIcon(
-                icon: Icons.calendar_month, index: 1, provider: navProvider),
+            Expanded(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _NavBarIcon(
+                      icon: Icons.home_filled, index: 0, provider: navProvider),
+                  _NavBarIcon(
+                      icon: Icons.calendar_month, index: 1, provider: navProvider),
+                ],
+              ),
+            ),
             _AnimatedFAB(
               onPressed: () {
                 showModalBottomSheet(
@@ -320,8 +326,15 @@ class HomePage extends StatelessWidget {
                 );
               },
             ),
-            _NavBarIcon(icon: Icons.games, index: 3, provider: navProvider),
-            _NavBarIcon(icon: Icons.person, index: 4, provider: navProvider),
+            Expanded(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _NavBarIcon(icon: Icons.games, index: 3, provider: navProvider),
+                  _NavBarIcon(icon: Icons.person, index: 4, provider: navProvider),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -469,6 +482,8 @@ class _AnimatedFABState extends State<_AnimatedFAB>
               child: Transform.rotate(
                 angle: _rotateAnimation.value * 3.14159,
                 child: Container(
+                  width: 50,
+                  height: 50,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
@@ -488,12 +503,15 @@ class _AnimatedFABState extends State<_AnimatedFAB>
                       ),
                     ],
                   ),
-                  child: FloatingActionButton(
-                    onPressed: _handlePress,
-                    backgroundColor: Colors.transparent,
-                    elevation: 0,
-                    mini: true,
-                    child: const Icon(Icons.add, color: Colors.white, size: 32),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      customBorder: const CircleBorder(),
+                      onTap: _handlePress,
+                      child: const Center(
+                        child: Icon(Icons.add, color: Colors.white, size: 28),
+                      ),
+                    ),
                   ),
                 ),
               ),

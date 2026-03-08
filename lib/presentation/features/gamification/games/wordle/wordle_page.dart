@@ -26,7 +26,7 @@ class _WordlePageState extends State<WordlePage> {
   @override
   void initState() {
     super.initState();
-    _targetWord = (_wordList..shuffle()).first;
+    _targetWord = (_wordList.toList()..shuffle()).first;
   }
 
   void _onKeyPressed(String key) {
@@ -106,7 +106,7 @@ class _WordlePageState extends State<WordlePage> {
 
   void _resetGame() {
     setState(() {
-      _targetWord = (_wordList..shuffle()).first;
+      _targetWord = (_wordList.toList()..shuffle()).first;
       _guesses = [];
       _currentGuess = '';
       _gameOver = false;

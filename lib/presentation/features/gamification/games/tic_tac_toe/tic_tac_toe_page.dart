@@ -97,6 +97,8 @@ class _TicTacToePageState extends State<TicTacToePage> {
       ),
       extendBodyBehindAppBar: true,
       body: Container(
+        width: double.infinity,
+        height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
@@ -129,16 +131,16 @@ class _TicTacToePageState extends State<TicTacToePage> {
                     ),
                   ),
                 Container(
-                  constraints: const BoxConstraints(maxWidth: 400),
-                  padding: const EdgeInsets.all(24.0),
+                  constraints: const BoxConstraints(maxWidth: 450),
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
                   child: AspectRatio(
                     aspectRatio: 1,
                     child: GridView.builder(
                       physics: const NeverScrollableScrollPhysics(),
                       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 3,
-                        crossAxisSpacing: 8,
-                        mainAxisSpacing: 8,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
                       ),
                       itemCount: 9,
                       itemBuilder: (context, index) {

@@ -138,7 +138,17 @@ class ChatProvider extends ChangeNotifier {
   }
 
   Future<void> setApiKey(String key) async {
-    await _geminiService.setApiKey(key);
+    final trimmedKey = key.trim();
+    if (trimmedKey.isEmpty) {
+      throw Exception('API key cannot be empty.');
+    }
+
+    await _geminiService.setApiKey(trimmedKey);
+
+    final savedKey = await _geminiService.getApiKey();
+    if (savedKey == null || savedKey.trim().isEmpty || savedKey.trim() != trimmedKey) {
+      throw Exception('API key was not persisted correctly.');
+    }
 
     final msg = {
       'id': const Uuid().v4(),

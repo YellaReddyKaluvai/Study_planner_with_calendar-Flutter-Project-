@@ -281,6 +281,8 @@ class _TetrisPageState extends State<TetrisPage> {
       ),
       extendBodyBehindAppBar: true,
       body: Container(
+        width: double.infinity,
+        height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
@@ -290,47 +292,50 @@ class _TetrisPageState extends State<TetrisPage> {
         ),
         child: Column(
           children: [
-            const SizedBox(height: 80),
+            const SizedBox(height: 100),
             Expanded(
               child: Center(
-                child: AspectRatio(
-                  aspectRatio: cols / rows,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.white24, width: 2),
-                      color: Colors.black54,
-                    ),
-                    child: GridView.builder(
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: cols,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: AspectRatio(
+                    aspectRatio: cols / rows,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.white24, width: 2),
+                        color: Colors.black54,
                       ),
-                      itemCount: rows * cols,
-                      itemBuilder: (context, index) {
-                        int r = index ~/ cols;
-                        int c = index % cols;
-                        Color? cellColor = board[r][c];
+                      child: GridView.builder(
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: cols,
+                        ),
+                        itemCount: rows * cols,
+                        itemBuilder: (context, index) {
+                          int r = index ~/ cols;
+                          int c = index % cols;
+                          Color? cellColor = board[r][c];
 
-                        // Draw current piece
-                        if (cellColor == null) {
-                          for (var point in currentPiece) {
-                            if (currentPos.x + point.x == r &&
-                                currentPos.y + point.y == c) {
-                              cellColor = currentColor;
-                              break;
+                          // Draw current piece
+                          if (cellColor == null) {
+                            for (var point in currentPiece) {
+                              if (currentPos.x + point.x == r &&
+                                  currentPos.y + point.y == c) {
+                                cellColor = currentColor;
+                                break;
+                              }
                             }
                           }
-                        }
 
-                        return Container(
-                          margin: const EdgeInsets.all(1),
-                          decoration: BoxDecoration(
-                            color: cellColor ?? Colors.transparent,
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        );
-                      },
+                          return Container(
+                            margin: const EdgeInsets.all(1),
+                            decoration: BoxDecoration(
+                              color: cellColor ?? Colors.transparent,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          );
+                        },
+                      ),
                     ),
                   ),
                 ),

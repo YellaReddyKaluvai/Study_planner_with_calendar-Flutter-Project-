@@ -140,10 +140,11 @@ class TasksScreen extends StatelessWidget {
                           ],
                         ),
                         const SizedBox(height: 12),
-                        Row(
+                        Wrap(
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 8,
                           children: [
                             const Text('Difficulty: '),
-                            const SizedBox(width: 12),
                             ChoiceChip(
                               label: const Text('Easy'),
                               selected: difficulty == TaskDifficulty.easy,
@@ -151,7 +152,6 @@ class TasksScreen extends StatelessWidget {
                                 difficulty = TaskDifficulty.easy;
                               }),
                             ),
-                            const SizedBox(width: 8),
                             ChoiceChip(
                               label: const Text('Medium'),
                               selected: difficulty == TaskDifficulty.medium,
@@ -159,7 +159,6 @@ class TasksScreen extends StatelessWidget {
                                 difficulty = TaskDifficulty.medium;
                               }),
                             ),
-                            const SizedBox(width: 8),
                             ChoiceChip(
                               label: const Text('Hard'),
                               selected: difficulty == TaskDifficulty.hard,

@@ -297,7 +297,6 @@ class _CalendarPageState extends State<CalendarPage>
           );
         },
       ),
-      floatingActionButton: _buildFAB(),
     );
   }
 
@@ -894,40 +893,6 @@ class _CalendarPageState extends State<CalendarPage>
       onTap: onTap,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
-      ),
-    );
-  }
-
-  Widget _buildFAB() {
-    return Container(
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: const LinearGradient(
-          colors: [_teamsPurple, _teamsPurpleLight],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: _teamsPurple.withOpacity(0.5),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: FloatingActionButton(
-        onPressed: () {
-          showModalBottomSheet(
-            context: context,
-            isScrollControlled: true,
-            backgroundColor: Colors.transparent,
-            builder: (context) => const TaskCreationSheet(),
-          );
-        },
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        shape: const CircleBorder(),
-        child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
       ),
     );
   }

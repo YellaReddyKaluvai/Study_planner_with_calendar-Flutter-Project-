@@ -4,6 +4,7 @@ import '../data/database_helper.dart';
 
 class GeminiService {
   static const String _apiKeyKey = 'gemini_api_key';
+  static const String _envApiKey = String.fromEnvironment('GEMINI_API_KEY');
 
   GenerativeModel? _model;
   ChatSession? _chat;
@@ -29,14 +30,26 @@ Guidelines:
 - When creating study plans, include specific time blocks and break periods.
 ''';
 
+  Future<String?> _resolveApiKey() async {
+    final savedKey = await DatabaseHelper.instance.getSetting(_apiKeyKey);
+    if (savedKey != null && savedKey.trim().isNotEmpty) {
+      return savedKey.trim();
+    }
+    if (_envApiKey.trim().isNotEmpty) {
+      return _envApiKey.trim();
+    }
+    return null;
+  }
+
   Future<void> _init() async {
-    final apiKey = await DatabaseHelper.instance.getSetting(_apiKeyKey);
+    final apiKey = await _resolveApiKey();
+
     if (apiKey == null || apiKey.isEmpty) {
       throw Exception("API Key not found. Please set it in settings.");
     }
 
     _model = GenerativeModel(
-      model: 'gemini-2.0-flash',
+      model: 'gemini-2.5-flash-lite',
       apiKey: apiKey,
       systemInstruction: Content.text(_systemInstruction),
       safetySettings: [
@@ -50,6 +63,7 @@ Guidelines:
         maxOutputTokens: 2048,
       ),
     );
+
     _chat = _model!.startChat();
   }
 
@@ -60,7 +74,7 @@ Guidelines:
   }
 
   Future<String?> getApiKey() async {
-    return await DatabaseHelper.instance.getSetting(_apiKeyKey);
+    return await _resolveApiKey();
   }
 
   Future<String> generatePreparationPlan(Task task) async {
@@ -114,7 +128,7 @@ Please provide:
 
   Stream<String> chatStream(String message, {List<Task>? tasks}) async* {
     try {
-      final currentKey = await DatabaseHelper.instance.getSetting(_apiKeyKey);
+      final currentKey = await getApiKey();
       if (currentKey == null || currentKey.isEmpty) {
         throw Exception(
             "Please set your Gemini API key first. Tap the 🔑 icon in the top right.");
